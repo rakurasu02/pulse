@@ -31,7 +31,15 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .who{font-size:12px;opacity:.7}
 #bar{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
 #txt{flex:1;min-width:0;border-radius:22px}
-@media (max-width:640px){#app{flex-direction:column}#side{width:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px}#side h2,#me{display:none}}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:12px 8px 4px}
+#find{width:100%;padding:9px 12px;font-size:14px;border-radius:10px;margin-bottom:4px}
+.hit{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 8px;font-size:14px}
+.hit span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hit button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer}
+.hit button.x,.hit button:disabled{background:var(--their);color:var(--muted)}
+.sub{padding:4px 8px;font-size:13px;color:var(--muted)}
+#chans{display:flex;flex-direction:column;gap:4px}
+@media (max-width:640px){#app{flex-direction:column}#side{width:auto;max-height:45%;overflow-y:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px}#chans{flex-direction:row;overflow-x:auto}#side h2,#me{display:none}}
 </style>
 </head>
 <body>
@@ -47,9 +55,14 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 
 <div id="app">
   <nav id="side"><h2>Pulse ✦</h2>
-    <button class="room" data-c="general"># general</button>
-    <button class="room" data-c="random"># random</button>
-    <button class="room" data-c="ideas"># ideas</button>
+    <input id="find" placeholder="Search people…" autocomplete="off"><div id="results"></div>
+    <div class="sec">Channels</div>
+    <div id="chans">
+      <button class="room" data-c="general"># general</button>
+      <button class="room" data-c="random"># random</button>
+      <button class="room" data-c="ideas"># ideas</button>
+    </div>
+    <div class="sec">Friends</div><div id="friends"><div class="sub">No friends yet</div></div>
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
@@ -65,8 +78,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ====== PASTE YOUR TWO VALUES FROM SUPABASE (Project Settings → API) ====== */
-const SUPABASE_URL = "https://slapewqnaiieeawqnviu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsYXBld3FuYWlpZWVhd3Fudml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNTgwNTQsImV4cCI6MjEwODczNDA1NH0.4-v7a2P1b-l04vwSwDI9STbSoMLhbiX0lSXkkln3kLE";
+const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY_HERE";
 /* ========================================================================== */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -111,6 +124,7 @@ async function loadNames() {
 
 async function start() {
   await loadNames();
+  loadFriends();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c));
   openChannel(channel);
 }
@@ -143,6 +157,53 @@ async function send() {
   const { data, error } = await sb.from("messages").insert({ channel, text, mood: $("mood").value }).select().single();
   if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); } else add(data);
 }
+/* ---- friends & search ---- */
+let friends = [], st = null;
+async function loadFriends() {
+  const { data } = await sb.from("friends").select("friend_id");
+  friends = (data || []).map(r => r.friend_id);
+  paintFriends();
+}
+function paintFriends() {
+  const box = $("friends"); box.innerHTML = "";
+  if (!friends.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = "No friends yet"; box.appendChild(s); return; }
+  friends.forEach(id => {
+    const r = document.createElement("div"); r.className = "hit";
+    const n = document.createElement("span"); n.textContent = names[id] || "Friend";
+    const x = document.createElement("button"); x.className = "x"; x.textContent = "Remove";
+    x.onclick = async () => {
+      const { error } = await sb.from("friends").delete().eq("friend_id", id);
+      if (error) alert("Couldn’t remove: " + error.message);
+      else { friends = friends.filter(f => f !== id); paintFriends(); runFind(); }
+    };
+    r.append(n, x); box.appendChild(r);
+  });
+}
+const cleanQ = () => $("find").value.trim().replace(/[%_,()\\]/g, "");
+$("find").oninput = () => { clearTimeout(st); st = setTimeout(runFind, 250); };
+async function runFind() {
+  const q = cleanQ(), box = $("results");
+  if (q.length < 2) { box.innerHTML = ""; return; }
+  const { data, error } = await sb.from("profiles").select("id,username").ilike("username", "%" + q + "%").neq("id", me).limit(8);
+  if (cleanQ() !== q) return;
+  box.innerHTML = "";
+  if (error || !data.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = error ? "Search failed" : "No one found"; box.appendChild(s); return; }
+  data.forEach(u => {
+    names[u.id] = u.username;
+    const r = document.createElement("div"); r.className = "hit";
+    const n = document.createElement("span"); n.textContent = u.username;
+    const b = document.createElement("button"), isF = friends.includes(u.id);
+    b.textContent = isF ? "Added" : "Add"; b.disabled = isF;
+    b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await sb.from("friends").insert({ friend_id: u.id });
+      if (error) { b.disabled = false; alert("Couldn’t add: " + error.message); }
+      else { friends.push(u.id); paintFriends(); runFind(); }
+    };
+    r.append(n, b); box.appendChild(r);
+  });
+}
+
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
 </script>
