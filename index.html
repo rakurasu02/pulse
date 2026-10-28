@@ -6,7 +6,8 @@
 <title>Pulse Messenger</title>
 <style>
 :root{--bg:#f6f4ff;--panel:#fff;--text:#1d1b2e;--muted:#6f6c85;--line:#e4e0f5;--accent:#6c4cf5;--their:#ece8ff}
-@media (prefers-color-scheme:dark){:root{--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;--their:#2a2640;color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;--their:#2a2640;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;--their:#2a2640;color-scheme:dark}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 button,input,select{font:inherit}
@@ -39,6 +40,15 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .hit button.x,.hit button:disabled{background:var(--their);color:var(--muted)}
 .sub{padding:4px 8px;font-size:13px;color:var(--muted)}
 #chans{display:flex;flex-direction:column;gap:4px}
+#head{display:flex;justify-content:space-between;align-items:center}
+#gear{border:0;background:none;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:8px}
+#set{display:none;position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+#set .box{background:var(--panel);color:var(--text);width:92%;max-width:420px;max-height:85%;overflow-y:auto;border-radius:16px;padding:18px}
+#set h3{margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+#sx{border:0;background:none;color:var(--text);font-size:18px;cursor:pointer}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.srow select{padding:6px 8px;border-radius:8px}
+.srow input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
 @media (max-width:640px){#app{flex-direction:column}#side{width:auto;max-height:45%;overflow-y:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px}#chans{flex-direction:row;overflow-x:auto}#side h2,#me{display:none}}
 </style>
 </head>
@@ -66,7 +76,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
-    <div id="head"></div><div id="msgs"></div>
+    <div id="head"><span id="ttl"></span><button id="gear" title="Settings">⚙️</button></div><div id="msgs"></div>
     <div id="bar">
       <select id="mood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select>
       <input id="txt" placeholder="Write a message…" maxlength="1000" autocomplete="off">
@@ -75,16 +85,56 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script>
-/* ====== PASTE YOUR TWO VALUES FROM SUPABASE (Project Settings → API) ====== */
-const SUPABASE_URL = "https://slapewqnaiieeawqnviu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsYXBld3FuYWlpZWVhd3Fudml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNTgwNTQsImV4cCI6MjEwODczNDA1NH0.4-v7a2P1b-l04vwSwDI9STbSoMLhbiX0lSXkkln3kLE";
-/* ========================================================================== */
+<div id="set"><div class="box"><h3>Settings <button id="sx" title="Close">✕</button></h3>
+  <div class="srow"><label for="sTheme">Theme</label><select id="sTheme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+  <div class="srow"><label for="sSize">Text size</label><select id="sSize"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
+  <div class="srow"><label for="sEnter">Press Enter to send</label><input type="checkbox" id="sEnter"></div>
+  <div class="srow"><label for="sSound">Sound for new messages</label><input type="checkbox" id="sSound"></div>
+  <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
+  <div class="sub" id="sMe"></div>
+</div></div>
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || window.SUPABASE_ANON_KEY.includes("PASTE")) {
+  document.body.textContent = "Setup needed: add your Supabase URL and anon key to config.js";
+  throw new Error("config.js missing or incomplete");
+}
+const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 const $ = id => document.getElementById(id);
 let signup = false, me = null, channel = "general", sub = null, names = {}, seen = new Set();
+
+/* ---- settings ---- */
+let S = { theme: "auto", size: "m", enter: true, sound: true, mood: "😊" };
+function applyS() {
+  const r = document.documentElement;
+  if (S.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", S.theme);
+  document.body.style.fontSize = { s: "14px", m: "16px", l: "19px" }[S.size] || "16px";
+  $("sTheme").value = S.theme; $("sSize").value = S.size; $("sEnter").checked = !!S.enter;
+  $("sSound").checked = !!S.sound; $("sMood").value = S.mood; $("mood").value = S.mood;
+}
+async function loadSettings() {
+  const { data } = await sb.from("settings").select("*").eq("user_id", me).maybeSingle();
+  if (data) S = { theme: data.theme, size: data.text_size, enter: data.enter_to_send, sound: data.sound, mood: data.mood };
+  applyS();
+}
+async function saveS() {
+  const { error } = await sb.from("settings").upsert({ user_id: me, theme: S.theme, text_size: S.size, enter_to_send: S.enter, sound: S.sound, mood: S.mood });
+  if (error) alert("Couldn’t save settings: " + error.message);
+}
+function beep() {
+  try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .05; o.start(); o.stop(c.currentTime + .12); } catch (e) {}
+}
+$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you"); $("set").style.display = "flex"; };
+$("sx").onclick = () => { $("set").style.display = "none"; };
+$("set").onclick = e => { if (e.target === $("set")) $("set").style.display = "none"; };
+$("sTheme").onchange = e => { S.theme = e.target.value; applyS(); saveS(); };
+$("sSize").onchange = e => { S.size = e.target.value; applyS(); saveS(); };
+$("sEnter").onchange = e => { S.enter = e.target.checked; saveS(); };
+$("sSound").onchange = e => { S.sound = e.target.checked; saveS(); };
+$("sMood").onchange = e => { S.mood = e.target.value; applyS(); saveS(); };
 
 $("swap").onclick = () => {
   signup = !signup;
@@ -125,6 +175,7 @@ async function loadNames() {
 async function start() {
   await loadNames();
   loadFriends();
+  loadSettings();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c));
   openChannel(channel);
 }
@@ -132,13 +183,13 @@ async function start() {
 async function openChannel(c) {
   channel = c; seen = new Set();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
-  $("head").textContent = "# " + c; $("msgs").innerHTML = "";
+  $("ttl").textContent = "# " + c; $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
   const { data } = await sb.from("messages").select("*").eq("channel", c).order("created_at", { ascending: false }).limit(100);
   (data || []).reverse().forEach(add);
   sub = sb.channel("room-" + c).on("postgres_changes",
     { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
-    async p => { if (!names[p.new.user_id]) await loadNames(); add(p.new); }).subscribe();
+    async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && S.sound) beep(); add(p.new); }).subscribe();
 }
 
 function add(m) {
@@ -205,7 +256,7 @@ async function runFind() {
 }
 
 $("send").onclick = send;
-$("txt").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+$("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
 </script>
 </body>
 </html>
