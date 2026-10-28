@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse Messenger</title>
+<style>
+:root{--bg:#f6f4ff;--panel:#fff;--text:#1d1b2e;--muted:#6f6c85;--line:#e4e0f5;--accent:#6c4cf5;--their:#ece8ff}
+@media (prefers-color-scheme:dark){:root{--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;--their:#2a2640;color-scheme:dark}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit}
+#auth{display:flex;height:100%;align-items:center;justify-content:center;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
+.card h1{margin:0;color:var(--accent)}
+input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:11px 16px;cursor:pointer}
+.link{background:none;border:0;color:var(--accent);cursor:pointer;padding:4px}
+#err{color:#d33;font-size:14px;min-height:18px}
+#app{display:none;height:100%;max-width:960px;margin:0 auto;background:var(--panel)}
+#side{width:200px;border-right:1px solid var(--line);padding:16px 10px;flex:none;display:flex;flex-direction:column;gap:4px}
+#side h2{margin:0 8px 10px;color:var(--accent);font-size:20px}
+.room{text-align:left;border:0;background:none;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
+.room.on{background:var(--their);font-weight:600}
+#me{margin-top:auto;font-size:13px;color:var(--muted);padding:8px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#head{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.m{max-width:78%;padding:8px 12px;border-radius:16px;background:var(--their);align-self:flex-start;overflow-wrap:anywhere}
+.m.me{background:var(--accent);color:#fff;align-self:flex-end}
+.who{font-size:12px;opacity:.7}
+#bar{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+#txt{flex:1;min-width:0;border-radius:22px}
+@media (max-width:640px){#app{flex-direction:column}#side{width:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px}#side h2,#me{display:none}}
+</style>
+</head>
+<body>
+<div id="auth"><div class="card">
+  <h1>Pulse ✦</h1>
+  <input id="user" placeholder="Username (3–24 characters)" style="display:none" maxlength="24">
+  <input id="email" type="email" placeholder="Email" autocomplete="email">
+  <input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+  <div id="err"></div>
+  <button class="btn" id="go">Log in</button>
+  <button class="link" id="swap">New here? Create an account</button>
+</div></div>
+
+<div id="app">
+  <nav id="side"><h2>Pulse ✦</h2>
+    <button class="room" data-c="general"># general</button>
+    <button class="room" data-c="random"># random</button>
+    <button class="room" data-c="ideas"># ideas</button>
+    <div id="me"></div><button class="link" id="out">Log out</button>
+  </nav>
+  <section id="main">
+    <div id="head"></div><div id="msgs"></div>
+    <div id="bar">
+      <select id="mood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select>
+      <input id="txt" placeholder="Write a message…" maxlength="1000" autocomplete="off">
+      <button class="btn" id="send">Send</button>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ====== PASTE YOUR TWO VALUES FROM SUPABASE (Project Settings → API) ====== */
+const SUPABASE_URL = "https://slapewqnaiieeawqnviu.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsYXBld3FuYWlpZWVhd3Fudml1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNTgwNTQsImV4cCI6MjEwODczNDA1NH0.4-v7a2P1b-l04vwSwDI9STbSoMLhbiX0lSXkkln3kLE";
+/* ========================================================================== */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+let signup = false, me = null, channel = "general", sub = null, names = {}, seen = new Set();
+
+$("swap").onclick = () => {
+  signup = !signup;
+  $("user").style.display = signup ? "block" : "none";
+  $("go").textContent = signup ? "Create account" : "Log in";
+  $("swap").textContent = signup ? "Have an account? Log in" : "New here? Create an account";
+  $("err").textContent = "";
+};
+
+$("go").onclick = async () => {
+  $("err").textContent = "";
+  const email = $("email").value.trim(), password = $("pass").value;
+  let r;
+  if (signup) {
+    const username = $("user").value.trim();
+    if (username.length < 3) { $("err").textContent = "Pick a username of at least 3 characters."; return; }
+    r = await sb.auth.signUp({ email, password, options: { data: { username } } });
+    if (!r.error && !r.data.session) { $("err").textContent = "Check your email to confirm, then log in."; return; }
+  } else {
+    r = await sb.auth.signInWithPassword({ email, password });
+  }
+  if (r.error) $("err").textContent = r.error.message.includes("profiles_username") ? "That username is taken." : r.error.message;
+};
+
+$("out").onclick = () => sb.auth.signOut();
+
+sb.auth.onAuthStateChange((_e, session) => {
+  if (session) { me = session.user.id; $("auth").style.display = "none"; $("app").style.display = "flex"; start(); }
+  else { me = null; $("app").style.display = "none"; $("auth").style.display = "flex"; if (sub) sb.removeChannel(sub); }
+});
+
+async function loadNames() {
+  const { data } = await sb.from("profiles").select("id,username");
+  (data || []).forEach(p => names[p.id] = p.username);
+  $("me").textContent = "Signed in as " + (names[me] || "you");
+}
+
+async function start() {
+  await loadNames();
+  document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c));
+  openChannel(channel);
+}
+
+async function openChannel(c) {
+  channel = c; seen = new Set();
+  document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
+  $("head").textContent = "# " + c; $("msgs").innerHTML = "";
+  if (sub) await sb.removeChannel(sub);
+  const { data } = await sb.from("messages").select("*").eq("channel", c).order("created_at", { ascending: false }).limit(100);
+  (data || []).reverse().forEach(add);
+  sub = sb.channel("room-" + c).on("postgres_changes",
+    { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
+    async p => { if (!names[p.new.user_id]) await loadNames(); add(p.new); }).subscribe();
+}
+
+function add(m) {
+  if (seen.has(m.id)) return; seen.add(m.id);
+  const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
+  const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (names[m.user_id] || "Someone");
+  const t = document.createElement("div"); t.textContent = (m.mood || "") + " " + m.text;
+  d.append(w, t); box.appendChild(d);
+  if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
+}
+
+async function send() {
+  const text = $("txt").value.trim(); if (!text) return;
+  $("txt").value = "";
+  const { data, error } = await sb.from("messages").insert({ channel, text, mood: $("mood").value }).select().single();
+  if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); } else add(data);
+}
+$("send").onclick = send;
+$("txt").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+</script>
+</body>
+</html>
