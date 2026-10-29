@@ -72,7 +72,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
       <button class="room" data-c="random"># random</button>
       <button class="room" data-c="ideas"># ideas</button>
     </div>
-    <div class="sec">Friends</div><div id="friends"><div class="sub">No friends yet</div></div>
+    <div class="sec">Chats</div><div id="friends"><div class="sub">No chats yet</div></div>
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
@@ -176,12 +176,13 @@ async function start() {
   await loadNames();
   loadFriends();
   loadSettings();
+  subscribeDM();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c));
-  openChannel(channel);
+  if (dm) openDM(dm); else openChannel(channel);
 }
 
 async function openChannel(c) {
-  channel = c; seen = new Set();
+  channel = c; dm = null; seen = new Set(); paintFriends();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = "# " + c; $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -205,30 +206,79 @@ function add(m) {
 async function send() {
   const text = $("txt").value.trim(); if (!text) return;
   $("txt").value = "";
-  const { data, error } = await sb.from("messages").insert({ channel, text, mood: $("mood").value }).select().single();
-  if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); } else add(data);
+  const target = dm, mood = $("mood").value;
+  const { data, error } = target
+    ? await sb.from("direct_messages").insert({ recipient_id: target, text, mood }).select().single()
+    : await sb.from("messages").insert({ channel, text, mood }).select().single();
+  if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); return; }
+  if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends & search ---- */
-let friends = [], st = null;
+let friends = [], partners = [], dm = null, unread = new Set(), dmSub = null, st = null;
 async function loadFriends() {
   const { data } = await sb.from("friends").select("friend_id");
   friends = (data || []).map(r => r.friend_id);
+  const { data: d2 } = await sb.from("direct_messages").select("sender_id,recipient_id").order("created_at", { ascending: false }).limit(300);
+  partners = [...new Set((d2 || []).map(r => r.sender_id === me ? r.recipient_id : r.sender_id))];
   paintFriends();
 }
 function paintFriends() {
   const box = $("friends"); box.innerHTML = "";
-  if (!friends.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = "No friends yet"; box.appendChild(s); return; }
-  friends.forEach(id => {
+  const ids = [...new Set([...friends, ...partners])];
+  if (!ids.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = "No chats yet. Search for someone and tap Add."; box.appendChild(s); return; }
+  ids.forEach(id => {
     const r = document.createElement("div"); r.className = "hit";
-    const n = document.createElement("span"); n.textContent = names[id] || "Friend";
-    const x = document.createElement("button"); x.className = "x"; x.textContent = "Remove";
-    x.onclick = async () => {
-      const { error } = await sb.from("friends").delete().eq("friend_id", id);
-      if (error) alert("Couldn’t remove: " + error.message);
-      else { friends = friends.filter(f => f !== id); paintFriends(); runFind(); }
-    };
-    r.append(n, x); box.appendChild(r);
+    const n = document.createElement("span"); n.style.cssText = "flex:1;cursor:pointer";
+    n.textContent = (unread.has(id) ? "● " : "💬 ") + (names[id] || "Someone");
+    if (dm === id) n.style.fontWeight = "700";
+    n.onclick = () => openDM(id);
+    r.appendChild(n);
+    const b = document.createElement("button");
+    if (friends.includes(id)) {
+      b.className = "x"; b.textContent = "Remove";
+      b.onclick = async () => {
+        const { error } = await sb.from("friends").delete().eq("friend_id", id);
+        if (error) alert("Couldn’t remove: " + error.message);
+        else { friends = friends.filter(f => f !== id); paintFriends(); runFind(); }
+      };
+    } else {
+      b.textContent = "Add";
+      b.onclick = async () => {
+        const { error } = await sb.from("friends").insert({ friend_id: id });
+        if (error) alert("Couldn’t add: " + error.message);
+        else { friends.push(id); paintFriends(); runFind(); }
+      };
+    }
+    r.appendChild(b); box.appendChild(r);
   });
+}
+
+async function openDM(uid) {
+  dm = uid; unread.delete(uid); seen = new Set();
+  document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
+  $("ttl").textContent = "💬 " + (names[uid] || "Chat"); $("msgs").innerHTML = "";
+  if (sub) { await sb.removeChannel(sub); sub = null; }
+  paintFriends();
+  const { data, error } = await sb.from("direct_messages").select("*")
+    .or("and(sender_id.eq." + me + ",recipient_id.eq." + uid + "),and(sender_id.eq." + uid + ",recipient_id.eq." + me + ")")
+    .order("created_at", { ascending: false }).limit(100);
+  if (dm !== uid) return;
+  if (error) { alert("Couldn’t load chat: " + error.message); return; }
+  (data || []).reverse().forEach(m => add({ ...m, user_id: m.sender_id }));
+}
+
+async function subscribeDM() {
+  if (dmSub) await sb.removeChannel(dmSub);
+  dmSub = sb.channel("dm-in").on("postgres_changes",
+    { event: "INSERT", schema: "public", table: "direct_messages", filter: "recipient_id=eq." + me },
+    async p => {
+      const m = p.new;
+      if (!names[m.sender_id]) await loadNames();
+      if (!partners.includes(m.sender_id)) partners.push(m.sender_id);
+      if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
+      if (S.sound) beep();
+      paintFriends();
+    }).subscribe();
 }
 const cleanQ = () => $("find").value.trim().replace(/[%_,()\\]/g, "");
 $("find").oninput = () => { clearTimeout(st); st = setTimeout(runFind, 250); };
