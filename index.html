@@ -72,6 +72,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
       <button class="room" data-c="random"># random</button>
       <button class="room" data-c="ideas"># ideas</button>
     </div>
+    <div class="sec" id="reqSec" style="display:none">Friend requests</div><div id="reqs"></div>
     <div class="sec">Chats</div><div id="friends"><div class="sub">No chats yet</div></div>
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
@@ -177,6 +178,7 @@ async function start() {
   loadFriends();
   loadSettings();
   subscribeDM();
+  subscribeFriends();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c));
   if (dm) openDM(dm); else openChannel(channel);
 }
@@ -213,43 +215,45 @@ async function send() {
   if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); return; }
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
-/* ---- friends & search ---- */
-let friends = [], partners = [], dm = null, unread = new Set(), dmSub = null, st = null;
-async function loadFriends() {
-  const { data } = await sb.from("friends").select("friend_id");
-  friends = (data || []).map(r => r.friend_id);
-  const { data: d2 } = await sb.from("direct_messages").select("sender_id,recipient_id").order("created_at", { ascending: false }).limit(300);
-  partners = [...new Set((d2 || []).map(r => r.sender_id === me ? r.recipient_id : r.sender_id))];
-  paintFriends();
+/* ---- friends, requests & search ---- */
+let fs = [], dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
+const relOf = id => fs.find(r => other(r) === id);
+
+function mkBtn(label, fn, cls) { const b = document.createElement("button"); if (cls) b.className = cls; b.textContent = label; b.onclick = fn; return b; }
+function mkRow(text, btns, onText) {
+  const r = document.createElement("div"); r.className = "hit";
+  const n = document.createElement("span"); n.style.flex = "1"; n.textContent = text;
+  if (onText) { n.style.cursor = "pointer"; n.onclick = onText; }
+  r.appendChild(n); btns.forEach(b => r.appendChild(b)); return r;
 }
+function note(box, text) { const s = document.createElement("div"); s.className = "sub"; s.textContent = text; box.appendChild(s); }
+async function act(promise, msg) { const { error } = await promise; if (error) alert(msg + ": " + error.message); else loadFriends(); }
+const accept = r => act(sb.from("friendships").update({ status: "accepted" }).eq("id", r.id), "Couldn’t accept");
+const drop = r => act(sb.from("friendships").delete().eq("id", r.id), "Couldn’t remove");
+
+async function loadFriends() {
+  const { data } = await sb.from("friendships").select("*");
+  fs = data || [];
+  if (fs.some(r => !names[other(r)])) await loadNames();
+  paintFriends(); runFind();
+}
+
 function paintFriends() {
+  const incoming = fs.filter(r => r.status === "pending" && r.addressee_id === me);
+  const rq = $("reqs"); rq.innerHTML = "";
+  $("reqSec").style.display = incoming.length ? "block" : "none";
+  incoming.forEach(r => rq.appendChild(mkRow(names[r.requester_id] || "Someone",
+    [mkBtn("Accept", () => accept(r)), mkBtn("Decline", () => drop(r), "x")])));
   const box = $("friends"); box.innerHTML = "";
-  const ids = [...new Set([...friends, ...partners])];
-  if (!ids.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = "No chats yet. Search for someone and tap Add."; box.appendChild(s); return; }
-  ids.forEach(id => {
-    const r = document.createElement("div"); r.className = "hit";
-    const n = document.createElement("span"); n.style.cssText = "flex:1;cursor:pointer";
-    n.textContent = (unread.has(id) ? "● " : "💬 ") + (names[id] || "Someone");
-    if (dm === id) n.style.fontWeight = "700";
-    n.onclick = () => openDM(id);
-    r.appendChild(n);
-    const b = document.createElement("button");
-    if (friends.includes(id)) {
-      b.className = "x"; b.textContent = "Remove";
-      b.onclick = async () => {
-        const { error } = await sb.from("friends").delete().eq("friend_id", id);
-        if (error) alert("Couldn’t remove: " + error.message);
-        else { friends = friends.filter(f => f !== id); paintFriends(); runFind(); }
-      };
-    } else {
-      b.textContent = "Add";
-      b.onclick = async () => {
-        const { error } = await sb.from("friends").insert({ friend_id: id });
-        if (error) alert("Couldn’t add: " + error.message);
-        else { friends.push(id); paintFriends(); runFind(); }
-      };
-    }
-    r.appendChild(b); box.appendChild(r);
+  const accepted = fs.filter(r => r.status === "accepted");
+  if (!accepted.length) { note(box, "No chats yet. Search for someone and send a friend request."); return; }
+  accepted.forEach(r => {
+    const id = other(r);
+    const row = mkRow((unread.has(id) ? "● " : "💬 ") + (names[id] || "Someone"),
+      [mkBtn("Remove", () => drop(r), "x")], () => openDM(id));
+    if (dm === id) row.firstChild.style.fontWeight = "700";
+    box.appendChild(row);
   });
 }
 
@@ -274,12 +278,21 @@ async function subscribeDM() {
     async p => {
       const m = p.new;
       if (!names[m.sender_id]) await loadNames();
-      if (!partners.includes(m.sender_id)) partners.push(m.sender_id);
       if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
       if (S.sound) beep();
       paintFriends();
     }).subscribe();
 }
+
+async function subscribeFriends() {
+  if (frSub) await sb.removeChannel(frSub);
+  let ch = sb.channel("friends-in");
+  ["requester_id", "addressee_id"].forEach(col => ["INSERT", "UPDATE"].forEach(ev => {
+    ch = ch.on("postgres_changes", { event: ev, schema: "public", table: "friendships", filter: col + "=eq." + me }, () => loadFriends());
+  }));
+  frSub = ch.subscribe();
+}
+
 const cleanQ = () => $("find").value.trim().replace(/[%_,()\\]/g, "");
 $("find").oninput = () => { clearTimeout(st); st = setTimeout(runFind, 250); };
 async function runFind() {
@@ -288,20 +301,17 @@ async function runFind() {
   const { data, error } = await sb.from("profiles").select("id,username").ilike("username", "%" + q + "%").neq("id", me).limit(8);
   if (cleanQ() !== q) return;
   box.innerHTML = "";
-  if (error || !data.length) { const s = document.createElement("div"); s.className = "sub"; s.textContent = error ? "Search failed" : "No one found"; box.appendChild(s); return; }
+  if (error || !data.length) { note(box, error ? "Search failed" : "No one found"); return; }
   data.forEach(u => {
     names[u.id] = u.username;
-    const r = document.createElement("div"); r.className = "hit";
-    const n = document.createElement("span"); n.textContent = u.username;
-    const b = document.createElement("button"), isF = friends.includes(u.id);
-    b.textContent = isF ? "Added" : "Add"; b.disabled = isF;
-    b.onclick = async () => {
-      b.disabled = true;
-      const { error } = await sb.from("friends").insert({ friend_id: u.id });
-      if (error) { b.disabled = false; alert("Couldn’t add: " + error.message); }
-      else { friends.push(u.id); paintFriends(); runFind(); }
-    };
-    r.append(n, b); box.appendChild(r);
+    const rel = relOf(u.id); let b;
+    if (!rel) b = mkBtn("Add", async () => { b.disabled = true;
+      const { error } = await sb.from("friendships").insert({ addressee_id: u.id });
+      if (error) { b.disabled = false; alert("Couldn’t send request: " + error.message); } else loadFriends(); });
+    else if (rel.status === "accepted") { b = mkBtn("Friends"); b.disabled = true; }
+    else if (rel.addressee_id === me) b = mkBtn("Accept", () => accept(rel));
+    else { b = mkBtn("Requested"); b.disabled = true; }
+    box.appendChild(mkRow(u.username, [b]));
   });
 }
 
