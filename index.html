@@ -58,6 +58,16 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .pw{position:relative}.pw input{width:100%;padding-right:64px}
 .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--accent);cursor:pointer;font-size:13px;padding:4px}
 #legal{font-size:12px;color:var(--muted);text-align:center}#legal a,.lk a{color:var(--accent)}
+.fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
+.rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
+.rq b{display:block;font-size:12px}
+.rx{display:flex;gap:4px;flex-wrap:wrap;margin:3px 6px 0}.rx:empty{display:none}.mw.me .rx{justify-content:flex-end}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:1px 8px;font-size:13px;cursor:pointer}
+.chip.on{border-color:var(--accent);background:var(--their)}
+#typing{display:none;padding:2px 22px 6px;font-size:13px;color:var(--muted);font-style:italic}
+#replybar{display:none;align-items:center;gap:8px;padding:8px 14px;background:var(--their);border-left:3px solid var(--accent);font-size:13px}
+#replybar span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#replybar button{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer}
 .ov{display:none;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:12px}
 .ov .bx{background:var(--panel);color:var(--text);width:100%;max-width:400px;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;max-height:90%;overflow-y:auto}
 .ov h3{margin:0}
@@ -149,7 +159,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   </nav>
   <section id="main">
     <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span id="ttl"></span></span><span><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="msgs"></div>
+    <div id="typing"></div>
     <div id="dmbar"></div>
+    <div id="replybar"></div>
     <div id="bar">
       <button id="attach" title="Send image or file" style="border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:18px;cursor:pointer">📎</button><input type="file" id="file" hidden>
       <select id="mood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select>
@@ -186,6 +198,14 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="pw"><input type="password" id="rpw2" placeholder="Repeat new password" autocomplete="new-password"><button type="button" class="eye" data-t="rpw2">Show</button></div>
   <div id="rpErr" style="color:#d33;font-size:14px;min-height:18px"></div>
   <button class="bt pri" id="rpSave">Save password</button></div></div>
+<div class="ov" id="mm"><div class="bx">
+  <div id="mmEmo" style="display:flex;justify-content:space-between"></div>
+  <button class="bt" id="mmReply">↩ Reply</button><button class="bt" id="mmFwd">↪ Forward</button>
+  <button class="bt" id="mmCopy">📋 Copy text</button><button class="bt" id="mmEdit">✏️ Edit</button>
+  <button class="bt" id="mmDel" style="color:#d33">🗑 Delete</button><button class="bt" id="mmRep">⚑ Report</button>
+  <button class="bt" id="mmClose">Close</button></div></div>
+<div class="ov" id="fw"><div class="bx"><h3>Forward to…</h3>
+  <div id="fwList" style="display:flex;flex-direction:column;gap:6px"></div><button class="bt" id="fwCancel">Cancel</button></div></div>
 <div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
   <select id="repReason"><option value="spam">Spam</option><option value="harassment">Harassment or bullying</option><option value="inappropriate">Inappropriate content</option><option value="scam">Scam or fraud</option><option value="other">Something else</option></select>
   <textarea id="repDetails" rows="3" maxlength="500" placeholder="Add details (optional)"></textarea>
@@ -322,6 +342,7 @@ async function start() {
   subscribeFriends();
   subscribeReceipts();
   subscribeEdits();
+  subscribeTyping();
   markAllDelivered();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c, true));
   if (dm) openDM(dm); else openChannel(channel);
@@ -329,12 +350,13 @@ async function start() {
 
 async function openChannel(c, user) {
   if (user) showChat();
-  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; paintFriends(); updateBar();
+  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); paintFriends(); updateBar();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
   const { data } = await sb.from("messages").select("*").eq("channel", c).order("created_at", { ascending: false }).limit(100);
   (data || []).reverse().forEach(add);
+  loadReactions();
   sub = sb.channel("room-" + c).on("postgres_changes",
     { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
     async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && S.sound) beep(); add(p.new); }).subscribe();
@@ -361,19 +383,27 @@ function add(m) {
   const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
   const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (m.recipient_id ? dn(m.user_id) : (names[m.user_id] || "Someone"));
   const t = document.createElement("div"); t.textContent = (m.mood || "") + " " + m.text; if (!m.text) t.style.display = "none";
-  d.append(w, t);
+  const pre = [];
+  if (m.forwarded) { const f = document.createElement("div"); f.className = "fwd"; f.textContent = "↪ Forwarded"; pre.push(f); }
+  if (m.reply_to && m.reply_preview) {
+    const q = document.createElement("div"); q.className = "rq";
+    const qn = document.createElement("b");
+    qn.textContent = m.reply_user === me ? "You" : (m.recipient_id ? dn(m.reply_user) : (names[m.reply_user] || "Someone"));
+    const qt = document.createElement("div"); qt.textContent = m.reply_preview;
+    q.append(qn, qt);
+    q.onclick = () => { const e = els[m.reply_to]; if (e && e.mw) e.mw.scrollIntoView({ block: "center", behavior: "smooth" }); };
+    pre.push(q);
+  }
+  d.append(w, ...pre, t);
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
   const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
   const ed = document.createElement("span"); ed.textContent = m.edited_at ? " · edited" : ""; tm.appendChild(ed);
   if (m.recipient_id && m.user_id === me) { const tk = document.createElement("span"); tk.style.marginLeft = "6px"; ticks[m.id] = tk; paintTick(tk, m); tm.appendChild(tk); }
-  if (m.user_id !== me) { const rl = document.createElement("span"); rl.className = "rp"; rl.textContent = "Report"; rl.onclick = () => openReport({ userId: m.user_id, kind: m.recipient_id ? "dm" : "channel", id: m.id }); tm.appendChild(rl); }
-  if (m.user_id === me) {
-    if (m.text) { const ea = document.createElement("span"); ea.className = "rp"; ea.textContent = "Edit"; ea.onclick = () => openEdit(m); tm.appendChild(ea); }
-    const da = document.createElement("span"); da.className = "rp"; da.textContent = "Delete"; da.onclick = () => deleteMsg(m); tm.appendChild(da);
-  }
-  els[m.id] = { mw: null, t, ed, m };
-  mw.append(d, tm); box.appendChild(mw); els[m.id].mw = mw;
+  const mo = document.createElement("span"); mo.className = "rp"; mo.textContent = "⋯"; mo.title = "Reply, react, forward…"; mo.onclick = () => openMenu(m); tm.appendChild(mo);
+  const rx = document.createElement("div"); rx.className = "rx";
+  els[m.id] = { mw: null, t, ed, rx, m };
+  mw.append(d, rx, tm); box.appendChild(mw); els[m.id].mw = mw; paintReactions(m.id);
   if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
 }
 
@@ -381,15 +411,16 @@ async function send() {
   const text = $("txt").value.trim(); if (!text) return;
   $("txt").value = "";
   const target = dm, mood = $("mood").value;
+  const rt = replyTo ? replyTo.id : null; clearReply();
   if (target && !(await ensureConn(target))) { $("txt").value = text; return; }
   const { data, error } = target
-    ? await sb.from("direct_messages").insert({ recipient_id: target, text, mood }).select().single()
-    : await sb.from("messages").insert({ channel, text, mood }).select().single();
+    ? await sb.from("direct_messages").insert({ recipient_id: target, text, mood, reply_to: rt }).select().single()
+    : await sb.from("messages").insert({ channel, text, mood, reply_to: rt }).select().single();
   if (error) { $("txt").value = text; alert(/row-level security/.test(error.message) ? "Couldn’t send this message. They may not have accepted your message request yet (you can send 3 until they do), or you may not be able to message this person." : "Couldn’t send: " + error.message); return; }
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], els = {}, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], els = {}, rxs = {}, replyTo = null, typeCh = {}, typeSub = null, typeTimer = null, typeLast = 0, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -511,7 +542,7 @@ function paintFriends() {
 
 async function openDM(uid, user) {
   if (user) showChat();
-  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {};
+  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping();
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
@@ -522,6 +553,7 @@ async function openDM(uid, user) {
   if (dm !== uid) return;
   if (error) { alert("Couldn’t load chat: " + error.message); return; }
   (data || []).reverse().forEach(m => add({ ...m, user_id: m.sender_id }));
+  loadReactions();
   markIncoming(uid);
 }
 
@@ -534,7 +566,7 @@ async function subscribeDM() {
       if (blocked.has(m.sender_id)) return;
       if (!names[m.sender_id]) await loadNames();
       if (connOf(m.sender_id) === "none") await loadFriends();
-      if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
+      if (dm === m.sender_id) { add({ ...m, user_id: m.sender_id }); hideTyping(); } else unread.add(m.sender_id);
       if (S.sound) beep();
       paintFriends();
       markAllDelivered();
@@ -689,7 +721,7 @@ $("more").onclick = () => { $("shName").textContent = dn(dm); $("sheet").style.d
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del", "nick", "edit"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick", "edit", "mm", "fw"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -803,7 +835,127 @@ async function subscribeEdits() {
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, p => { if (!dm) removeEl(p.old.id); })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: "recipient_id=eq." + me }, p => { if (dm) applyEdit({ ...p.new }); })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, p => { if (dm) removeEl(p.old.id); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, p => {
+      const r = (p.new && p.new.message_id) ? p.new : p.old;
+      if (r && els[r.message_id] && r.kind === (dm ? "dm" : "channel")) loadReact(r.message_id, r.kind);
+    })
     .subscribe();
+}
+
+/* ---- typing, reply, forward, reactions ---- */
+function hideTyping() { clearTimeout(typeTimer); $("typing").style.display = "none"; }
+function showTyping(from) {
+  $("typing").textContent = dn(from) + " is typing…"; $("typing").style.display = "block";
+  clearTimeout(typeTimer); typeTimer = setTimeout(hideTyping, 3500);
+}
+async function subscribeTyping() {
+  if (typeSub) await sb.removeChannel(typeSub);
+  typeSub = sb.channel("typing:" + me).on("broadcast", { event: "typing" }, p => {
+    const from = p.payload && p.payload.from;
+    if (from && dm === from && !blocked.has(from)) showTyping(from);
+  }).subscribe();
+}
+function sendTyping() {
+  if (!dm || connOf(dm) !== "ok" || Date.now() - typeLast < 2500) return;
+  typeLast = Date.now();
+  let ch = typeCh[dm];
+  if (!ch) { ch = typeCh[dm] = sb.channel("typing:" + dm); ch.subscribe(); }
+  ch.send({ type: "broadcast", event: "typing", payload: { from: me } });
+}
+$("txt").addEventListener("input", sendTyping);
+
+function who(m) { return m.user_id === me ? "yourself" : (m.recipient_id ? dn(m.user_id) : (names[m.user_id] || "Someone")); }
+function setReply(m) {
+  replyTo = m; const b = $("replybar"); b.innerHTML = "";
+  const sp = document.createElement("span"); sp.textContent = "Replying to " + who(m) + ": " + (m.text || "📎 " + (m.file_name || "file"));
+  const x = document.createElement("button"); x.textContent = "✕"; x.onclick = clearReply;
+  b.append(sp, x); b.style.display = "flex"; $("txt").focus();
+}
+function clearReply() { replyTo = null; $("replybar").style.display = "none"; }
+
+const EMOJIS = ["👍", "😍", "😂", "😮", "😢", "🔥"];
+let mmCtx = null;
+EMOJIS.forEach(e => {
+  const b = document.createElement("button"); b.textContent = e; b.style.cssText = "border:0;background:none;font-size:28px;cursor:pointer";
+  b.onclick = () => { const m = mmCtx; $("mm").style.display = "none"; react(m, e); };
+  $("mmEmo").appendChild(b);
+});
+function openMenu(m) {
+  mmCtx = m; const mine = m.user_id === me;
+  $("mmEdit").style.display = mine && m.text ? "block" : "none";
+  $("mmDel").style.display = mine ? "block" : "none";
+  $("mmRep").style.display = mine ? "none" : "block";
+  $("mmCopy").style.display = m.text ? "block" : "none";
+  $("mm").style.display = "flex";
+}
+const closeMenu = () => { $("mm").style.display = "none"; };
+$("mmClose").onclick = closeMenu;
+$("mmReply").onclick = () => { closeMenu(); setReply(mmCtx); };
+$("mmFwd").onclick = () => { closeMenu(); openForward(mmCtx); };
+$("mmCopy").onclick = () => { closeMenu(); if (navigator.clipboard) navigator.clipboard.writeText(mmCtx.text || ""); };
+$("mmEdit").onclick = () => { closeMenu(); openEdit(mmCtx); };
+$("mmDel").onclick = () => { closeMenu(); deleteMsg(mmCtx); };
+$("mmRep").onclick = () => { closeMenu(); openReport({ userId: mmCtx.user_id, kind: mmCtx.recipient_id ? "dm" : "channel", id: mmCtx.id }); };
+
+/* reactions */
+function paintReactions(id) {
+  const e = els[id]; if (!e) return; e.rx.replaceChildren();
+  const list = rxs[id] || [], counts = {};
+  list.forEach(r => { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
+  Object.entries(counts).forEach(([emo, n]) => {
+    const c = document.createElement("span"); c.className = "chip" + (list.some(r => r.user_id === me && r.emoji === emo) ? " on" : "");
+    c.textContent = emo + (n > 1 ? " " + n : ""); c.onclick = () => react(e.m, emo); e.rx.appendChild(c);
+  });
+}
+async function loadReact(id, kind) {
+  const { data } = await sb.from("message_reactions").select("user_id,emoji").eq("kind", kind).eq("message_id", id);
+  rxs[id] = data || []; paintReactions(id);
+}
+async function loadReactions() {
+  const ids = Object.keys(els).map(Number); if (!ids.length) return;
+  const { data } = await sb.from("message_reactions").select("message_id,user_id,emoji").eq("kind", dm ? "dm" : "channel").in("message_id", ids);
+  rxs = {}; (data || []).forEach(r => { (rxs[r.message_id] = rxs[r.message_id] || []).push(r); }); ids.forEach(paintReactions);
+}
+async function react(m, emoji) {
+  const kind = m.recipient_id ? "dm" : "channel";
+  const mine = (rxs[m.id] || []).find(r => r.user_id === me);
+  const q = sb.from("message_reactions");
+  const { error } = mine
+    ? (mine.emoji === emoji ? await q.delete().eq("kind", kind).eq("message_id", m.id).eq("user_id", me)
+                            : await q.update({ emoji }).eq("kind", kind).eq("message_id", m.id).eq("user_id", me))
+    : await q.insert({ kind, message_id: m.id, user_id: me, emoji });
+  if (error) { alert("Couldn’t react: " + error.message); return; }
+  loadReact(m.id, kind);
+}
+
+/* forward */
+function openForward(m) {
+  const box = $("fwList"); box.innerHTML = "";
+  const add1 = (label, dest) => { const b = document.createElement("button"); b.className = "bt"; b.textContent = label; b.onclick = () => forwardTo(m, dest); box.appendChild(b); };
+  ["general", "random", "ideas"].forEach(c => add1("# " + c, { type: "ch", id: c }));
+  const ids = new Set([...fs.filter(r => r.status === "accepted").map(other), ...mr.filter(r => r.status === "accepted").map(partnerOf)]);
+  [...ids].filter(id => connOf(id) === "ok").forEach(id => add1("💬 " + dn(id), { type: "dm", id }));
+  $("fw").style.display = "flex";
+}
+$("fwCancel").onclick = () => { $("fw").style.display = "none"; };
+async function forwardTo(m, dest) {
+  $("fw").style.display = "none";
+  let file = {};
+  if (m.file_path) {
+    const safe = (m.file_name || "file").replace(/[^\w.\-]+/g, "_").slice(-80);
+    const np = me + "/" + crypto.randomUUID() + "-" + safe;
+    const { error } = await sb.storage.from("attachments").copy(m.file_path, np);
+    if (error) { alert("Couldn’t copy the file: " + error.message); return; }
+    file = { file_path: np, file_name: m.file_name, file_type: m.file_type, file_size: m.file_size };
+  }
+  const row = { text: m.text || "", mood: m.mood || "😊", forwarded: true, ...file };
+  const { data, error } = dest.type === "dm"
+    ? await sb.from("direct_messages").insert({ ...row, recipient_id: dest.id }).select().single()
+    : await sb.from("messages").insert({ ...row, channel: dest.id }).select().single();
+  if (error) { alert("Couldn’t forward: " + error.message); return; }
+  if (dest.type === "dm" && dm === dest.id) add({ ...data, user_id: data.sender_id });
+  else if (dest.type === "ch" && !dm && channel === dest.id) add(data);
+  alert("Message forwarded.");
 }
 
 $("send").onclick = send;
