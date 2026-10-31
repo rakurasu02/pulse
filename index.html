@@ -167,6 +167,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
   <div class="sec">Blocked people</div><div id="sBlocked"></div>
   <div class="sub lk"><a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a id="contactLink" href="#" target="_blank" rel="noopener">Contact</a></div>
+  <a id="adminLink" href="admin.html" class="bt" style="display:none;text-align:center;text-decoration:none;margin-top:8px">🛠 Admin panel</a>
   <div class="sec">Account</div><button class="bt dng" id="delBtn">Delete my account</button>
   <div class="sub" id="sMe"></div>
 </div></div>
@@ -315,6 +316,7 @@ async function loadNames() {
 async function start() {
   await loadNames();
   Promise.all([loadBlocks(), loadNicks(), loadPrivate()]).then(loadFriends);
+  checkAdmin();
   loadSettings();
   subscribeDM();
   subscribeFriends();
@@ -709,6 +711,12 @@ $("delGo").onclick = async () => {
   } catch (e) { alert("Couldn’t delete the account: " + (e.message || e)); }
   b.textContent = "Delete forever"; b.disabled = $("delTxt").value.trim() !== "DELETE";
 };
+
+/* ---- admin link (only shown to admins) ---- */
+async function checkAdmin() {
+  const { data } = await sb.rpc("is_admin");
+  $("adminLink").style.display = data === true ? "block" : "none";
+}
 
 /* ---- private real name (only you can see it) ---- */
 let myFull = "";

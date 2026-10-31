@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Admin</title>
+<style>
+:root{--bg:#f6f4ff;--panel:#fff;--text:#1d1b2e;--muted:#6f6c85;--line:#e4e0f5;--accent:#6c4cf5;--red:#d33}
+@media (prefers-color-scheme:dark){:root{--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+h1{margin:4px 0 12px;color:var(--accent);display:flex;justify-content:space-between;align-items:center}
+h1 a{font-size:14px;font-weight:400;color:var(--accent)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 14px;border-radius:20px;cursor:pointer;font:inherit}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:26px;color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:13px}.quote{background:var(--bg);border-radius:10px;padding:8px 10px;margin:8px 0;overflow-wrap:anywhere}
+.b{border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:13px;background:var(--bg);color:var(--text);margin:4px 6px 0 0}
+.b.red{background:var(--red);color:#fff}.b.pri{background:var(--accent);color:#fff}
+input,select{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;width:100%;margin-bottom:10px}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--bg);margin-left:6px}.tag.red{background:var(--red);color:#fff}
+</style></head><body><main>
+<h1>Pulse Admin <a href="index.html">← Back to Pulse</a></h1>
+<div id="root">Loading…</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const root = document.getElementById("root");
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(props || {}).forEach(([k, v]) => { if (k === "class") e.className = v; else if (k.startsWith("on")) e[k] = v; else e.setAttribute(k, v); });
+  kids.flat().forEach(k => e.append(k && k.nodeType ? k : document.createTextNode(k ?? "")));
+  return e;
+}
+const when = t => new Date(t).toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+const say = m => { root.replaceChildren(el("div", { class: "card" }, m)); };
+let tab = "dash";
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return say(["Please ", el("a", { href: "index.html" }, "log in to Pulse"), " first, then open this page again."]);
+  const { data: ok } = await sb.rpc("is_admin");
+  if (ok !== true) return say("You are not an admin of this Pulse.");
+  render();
+}
+function render() {
+  const tabs = el("div", { class: "tabs" }, [["dash", "Dashboard"], ["rep", "Reports"], ["usr", "Users"], ["msg", "Channel messages"]].map(([k, t]) =>
+    el("button", { class: tab === k ? "on" : "", onclick: () => { tab = k; render(); } }, t)));
+  const body = el("div");
+  root.replaceChildren(tabs, body);
+  ({ dash, rep, usr, msg }[tab])(body);
+}
+async function dash(box) {
+  const { data } = await sb.rpc("admin_stats");
+  if (!data) return box.append("Couldn’t load stats.");
+  const S = [["users", "Users"], ["new_users_7d", "New (7 days)"], ["messages_24h", "Channel messages (24h)"], ["dms_24h", "Private messages (24h)"], ["open_reports", "Open reports"], ["banned", "Banned"]];
+  box.append(el("div", { class: "grid" }, S.map(([k, l]) => el("div", { class: "stat" }, el("b", {}, String(data[k])), l))));
+}
+async function rep(box) {
+  const sel = el("select", { onchange: load }, ["open", "resolved", "dismissed", "all"].map(s => el("option", { value: s }, s[0].toUpperCase() + s.slice(1))));
+  const list = el("div"); box.append(sel, list);
+  async function load() {
+    const { data, error } = await sb.rpc("admin_reports", { p_status: sel.value });
+    if (error) return list.replaceChildren(error.message);
+    if (!data.length) return list.replaceChildren(el("div", { class: "muted" }, "No reports here."));
+    list.replaceChildren(...data.map(r => el("div", { class: "card" },
+      el("div", { class: "row" }, el("div", {}, el("b", {}, r.reported_name || "(deleted user)"), r.reported_banned ? el("span", { class: "tag red" }, "banned") : "", el("span", { class: "tag" }, r.reason)),
+        el("span", { class: "muted" }, when(r.created_at))),
+      el("div", { class: "muted" }, "Reported by " + (r.reporter_name || "(deleted user)") + " · " + r.status + (r.message_kind ? " · " + r.message_kind + " message" : "")),
+      r.details ? el("div", { class: "quote" }, "“" + r.details + "”") : "",
+      r.message_text ? el("div", { class: "quote" }, "Message: " + r.message_text) : "",
+      el("div", {},
+        r.message_kind && r.message_id ? el("button", { class: "b red", onclick: () => delMsg(r.message_kind, r.message_id, load) }, "Delete message") : "",
+        r.reported_id && !r.reported_banned ? el("button", { class: "b red", onclick: () => ban(r.reported_id, load) }, "Ban user") : "",
+        r.reported_id && r.reported_banned ? el("button", { class: "b", onclick: () => unban(r.reported_id, load) }, "Unban") : "",
+        r.status !== "resolved" ? el("button", { class: "b pri", onclick: () => setRep(r.id, "resolved", load) }, "Resolve") : "",
+        r.status !== "dismissed" ? el("button", { class: "b", onclick: () => setRep(r.id, "dismissed", load) }, "Dismiss") : ""))));
+  }
+  load();
+}
+async function usr(box) {
+  const q = el("input", { placeholder: "Search username…" }); const list = el("div"); box.append(q, list);
+  let t; q.oninput = () => { clearTimeout(t); t = setTimeout(load, 250); };
+  async function load() {
+    const { data, error } = await sb.rpc("admin_users", { p_q: q.value.trim() });
+    if (error) return list.replaceChildren(error.message);
+    list.replaceChildren(...data.map(u => el("div", { class: "card" }, el("div", { class: "row" },
+      el("div", {}, el("b", {}, u.username), u.banned ? el("span", { class: "tag red" }, "banned") : "",
+        el("div", { class: "muted" }, "Joined " + when(u.created_at) + " · reports against: " + u.reports_against)),
+      u.banned ? el("button", { class: "b", onclick: () => unban(u.id, load) }, "Unban") : el("button", { class: "b red", onclick: () => ban(u.id, load) }, "Ban")))));
+  }
+  load();
+}
+async function msg(box) {
+  const list = el("div"); box.append(list);
+  async function load() {
+    const { data, error } = await sb.rpc("admin_channel_messages", { p_limit: 100 });
+    if (error) return list.replaceChildren(error.message);
+    list.replaceChildren(...data.map(m => el("div", { class: "card" }, el("div", { class: "row" },
+      el("div", {}, el("b", {}, m.username || "(deleted)"), el("span", { class: "tag" }, "#" + m.channel), el("span", { class: "muted" }, " " + when(m.created_at))),
+      el("button", { class: "b red", onclick: () => delMsg("channel", m.id, load) }, "Delete")),
+      el("div", { class: "quote" }, (m.text || "") + (m.file_name ? " 📎 " + m.file_name : "")))));
+  }
+  load();
+}
+async function ban(id, done) {
+  const reason = prompt("Reason for the ban (optional):"); if (reason === null) return;
+  const { error } = await sb.rpc("admin_ban", { p_uid: id, p_reason: reason }); if (error) alert(error.message); done();
+}
+async function unban(id, done) { const { error } = await sb.rpc("admin_unban", { p_uid: id }); if (error) alert(error.message); done(); }
+async function setRep(id, status, done) { const { error } = await sb.rpc("admin_set_report", { p_id: id, p_status: status }); if (error) alert(error.message); done(); }
+async function delMsg(kind, id, done) {
+  if (!confirm("Delete this message permanently?")) return;
+  const { data, error } = await sb.rpc("admin_delete_message", { p_kind: kind, p_id: id });
+  if (error) return alert(error.message);
+  if (data) await sb.storage.from("attachments").remove([data]);
+  done();
+}
+init();
+</script></body></html>
