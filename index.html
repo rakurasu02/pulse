@@ -71,6 +71,29 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #back{display:none;border:0;background:none;color:var(--accent);font-size:30px;line-height:1;cursor:pointer;padding:0 12px 0 0}
 #head>span{display:flex;align-items:center}
 #gear2{display:none;border:0;background:none;font-size:22px;cursor:pointer;padding:0}
+@media (min-width:641px){
+ #app{max-width:1600px}
+ #side{width:340px;padding:18px 12px;overflow-y:auto}
+ #side h2{font-size:26px;margin:0 8px 14px}
+ #find{font-size:15px;padding:11px 16px;border-radius:22px;background:var(--their);border-color:transparent}
+ .sec{margin:18px 10px 6px}
+ .room,.hit{border-radius:12px;padding:8px 10px;transition:background .15s}
+ .room{font-size:16px}
+ .room:hover,.hit:hover{background:var(--bg)}
+ .room.on{background:var(--their)}
+ .room::before{content:"#";flex:none;width:36px;height:36px;border-radius:50%;background:var(--their);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;margin-right:10px}
+ .room.on::before{background:var(--panel)}
+ #me{padding:10px;font-size:13px}
+ #main{background:var(--bg)}
+ #head{background:var(--panel);padding:12px 22px;font-size:17px;box-shadow:0 1px 6px rgba(0,0,0,.06);z-index:1}
+ #ttl{font-weight:700}
+ #msgs{padding:22px 32px;gap:4px}
+ .mw{max-width:62%;margin-top:6px}
+ .m{font-size:15px;padding:9px 14px;border-radius:18px;background:var(--panel);border:1px solid var(--line)}
+ .m.me{background:var(--accent);border-color:transparent}
+ #bar{background:var(--panel);padding:14px 22px;gap:10px}
+ #txt{padding:12px 18px;font-size:15px}
+}
 @media (max-width:640px){
  #app{flex-direction:column;height:100dvh}
  #side{width:100%;flex:1;min-height:0;overflow-y:auto;border-right:0;padding:14px 12px}
@@ -117,7 +140,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
-    <div id="head"><span><button id="back" title="Back">‹</button><span id="ttl"></span></span><span><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="msgs"></div>
+    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span id="ttl"></span></span><span><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="msgs"></div>
     <div id="dmbar"></div>
     <div id="bar">
       <button id="attach" title="Send image or file" style="border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:18px;cursor:pointer">📎</button><input type="file" id="file" hidden>
@@ -262,7 +285,7 @@ async function openChannel(c, user) {
   if (user) showChat();
   channel = c; dm = null; seen = new Set(); ticks = {}; paintFriends(); updateBar();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
-  $("ttl").textContent = "# " + c; $("msgs").innerHTML = "";
+  $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
   const { data } = await sb.from("messages").select("*").eq("channel", c).order("created_at", { ascending: false }).limit(100);
   (data || []).reverse().forEach(add);
@@ -274,6 +297,10 @@ async function openChannel(c, user) {
 function paintTick(el, m) {
   el.textContent = m.seen_at ? "✓✓ Seen" : m.delivered_at ? "✓✓ Delivered" : "✓ Sent";
   el.style.color = m.seen_at ? "var(--accent)" : "";
+}
+function setHeadAv(txt, isChan) {
+  const a = $("hav"); a.textContent = txt;
+  a.style.background = isChan ? "var(--their)" : ""; a.style.color = isChan ? "var(--accent)" : "";
 }
 function fmtTime(iso) {
   const d = iso ? new Date(iso) : new Date();
@@ -433,7 +460,7 @@ async function openDM(uid, user) {
   if (user) showChat();
   dm = uid; unread.delete(uid); seen = new Set(); ticks = {};
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
-  $("ttl").textContent = "💬 " + (names[uid] || "Chat"); $("msgs").innerHTML = "";
+  $("ttl").textContent = names[uid] || "Chat"; setHeadAv((Array.from(names[uid] || "?")[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
   paintFriends(); updateBar();
   const { data, error } = await sb.from("direct_messages").select("*")
