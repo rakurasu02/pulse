@@ -55,6 +55,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #dmbar{display:none;align-items:center;gap:8px;padding:10px 14px;background:var(--their);font-size:14px;border-top:1px solid var(--line)}
 #dmbar button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px}
 #dmbar button.x{background:var(--panel);color:var(--muted)}
+.pw{position:relative}.pw input{width:100%;padding-right:64px}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--accent);cursor:pointer;font-size:13px;padding:4px}
 #legal{font-size:12px;color:var(--muted);text-align:center}#legal a,.lk a{color:var(--accent)}
 .ov{display:none;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:12px}
 .ov .bx{background:var(--panel);color:var(--text);width:100%;max-width:400px;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;max-height:90%;overflow-y:auto}
@@ -118,9 +120,12 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 <body>
 <div id="auth"><div class="card">
   <h1>Pulse ✦</h1>
-  <input id="user" placeholder="Username (3–24 characters)" style="display:none" maxlength="24">
-  <input id="email" type="email" placeholder="Email" autocomplete="email">
-  <input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+  <input id="fn" placeholder="First name" style="display:none" maxlength="40" autocomplete="given-name">
+  <input id="ln" placeholder="Last name" style="display:none" maxlength="40" autocomplete="family-name">
+  <input id="user" placeholder="Username or email" maxlength="60" autocomplete="username" autocapitalize="none">
+  <input id="email" type="email" placeholder="Email (used to reset your password)" style="display:none" autocomplete="email">
+  <div class="pw"><input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password"><button type="button" class="eye" data-t="pass">Show</button></div>
+  <div class="pw" id="pw2w" style="display:none"><input id="pass2" type="password" placeholder="Confirm password" autocomplete="new-password"><button type="button" class="eye" data-t="pass2">Show</button></div>
   <div id="err"></div>
   <button class="btn" id="go">Log in</button>
   <button class="link" id="forgot">Forgot password?</button>
@@ -176,8 +181,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <textarea id="edTxt" rows="3" maxlength="1000"></textarea>
   <button class="bt pri" id="edSave">Save</button><button class="bt" id="edCancel">Cancel</button></div></div>
 <div class="ov" id="reset" style="z-index:60"><div class="bx"><h3>Set a new password</h3>
-  <input type="password" id="rpw1" placeholder="New password (6+ characters)" autocomplete="new-password">
-  <input type="password" id="rpw2" placeholder="Repeat new password" autocomplete="new-password">
+  <div class="pw"><input type="password" id="rpw1" placeholder="New password (6+ characters)" autocomplete="new-password"><button type="button" class="eye" data-t="rpw1">Show</button></div>
+  <div class="pw"><input type="password" id="rpw2" placeholder="Repeat new password" autocomplete="new-password"><button type="button" class="eye" data-t="rpw2">Show</button></div>
   <div id="rpErr" style="color:#d33;font-size:14px;min-height:18px"></div>
   <button class="bt pri" id="rpSave">Save password</button></div></div>
 <div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
@@ -223,7 +228,7 @@ function beep() {
   try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain();
     o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .05; o.start(); o.stop(c.currentTime + .12); } catch (e) {}
 }
-$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you"); $("set").style.display = "flex"; paintBlocked(); };
+$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you") + (myFull ? " (" + myFull + ")" : ""); $("set").style.display = "flex"; paintBlocked(); };
 $("gear2").onclick = $("gear").onclick;
 $("sx").onclick = () => { $("set").style.display = "none"; };
 $("set").onclick = e => { if (e.target === $("set")) $("set").style.display = "none"; };
@@ -249,28 +254,48 @@ $("back").onclick = () => {
   else { document.body.classList.remove("chat-open"); if (dm) { dm = null; paintFriends(); } }
 };
 
+const NAME_RE = /^[A-Za-z0-9_.-]{3,24}$/;
+document.querySelectorAll(".eye").forEach(b => b.onclick = () => {
+  const i = $(b.dataset.t), show = i.type === "password";
+  i.type = show ? "text" : "password"; b.textContent = show ? "Hide" : "Show";
+});
 $("swap").onclick = () => {
   signup = !signup;
-  $("user").style.display = signup ? "block" : "none";
+  ["fn", "ln", "email", "pw2w"].forEach(id => { $(id).style.display = signup ? "block" : "none"; });
+  $("user").placeholder = signup ? "Username (letters, numbers . _ -)" : "Username or email";
+  $("user").autocomplete = signup ? "off" : "username";
+  $("pass").autocomplete = signup ? "new-password" : "current-password";
   $("go").textContent = signup ? "Create account" : "Log in";
   $("forgot").style.display = signup ? "none" : "block";
   $("swap").textContent = signup ? "Have an account? Log in" : "New here? Create an account";
-  $("err").textContent = "";
+  $("err").textContent = ""; $("err").style.color = "";
 };
 
 $("go").onclick = async () => {
+  const bad = t => { $("err").style.color = ""; $("err").textContent = t; };
   $("err").textContent = ""; $("err").style.color = "";
-  const email = $("email").value.trim(), password = $("pass").value;
+  const password = $("pass").value;
   let r;
   if (signup) {
-    const username = $("user").value.trim();
-    if (username.length < 3) { $("err").textContent = "Pick a username of at least 3 characters."; return; }
-    r = await sb.auth.signUp({ email, password, options: { data: { username } } });
-    if (!r.error && !r.data.session) { $("err").textContent = "Check your email to confirm, then log in."; return; }
+    const fn = $("fn").value.trim(), ln = $("ln").value.trim(), username = $("user").value.trim(), email = $("email").value.trim();
+    if (!fn || !ln) return bad("Enter your first and last name.");
+    if (!NAME_RE.test(username)) return bad("Username must be 3–24 characters: letters, numbers, dot, underscore or dash.");
+    if (!email) return bad("Enter your email. It is used to reset your password.");
+    if (password.length < 6) return bad("Use a password of at least 6 characters.");
+    if (password !== $("pass2").value) return bad("The two passwords don’t match.");
+    r = await sb.auth.signUp({ email, password, options: { data: { username, first_name: fn, last_name: ln } } });
+    if (!r.error && !r.data.session) { $("err").style.color = "var(--muted)"; $("err").textContent = "Check your email to confirm, then log in."; return; }
   } else {
-    r = await sb.auth.signInWithPassword({ email, password });
+    const id = $("user").value.trim();
+    if (!id || !password) return bad("Enter your username (or email) and password.");
+    if (id.includes("@")) r = await sb.auth.signInWithPassword({ email: id, password });
+    else {
+      const { data, error } = await sb.functions.invoke("username-login", { body: { username: id, password } });
+      if (error || !data || !data.access_token) return bad("Wrong username or password. (If you just signed up, confirm your email first.)");
+      r = await sb.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+    }
   }
-  if (r.error) $("err").textContent = r.error.message.includes("profiles_username") ? "That username is taken." : r.error.message;
+  if (r.error) bad(/Database error|duplicate key|profiles_username/.test(r.error.message) ? "That username is already taken. Try another." : r.error.message);
 };
 
 $("out").onclick = () => sb.auth.signOut();
@@ -289,7 +314,7 @@ async function loadNames() {
 
 async function start() {
   await loadNames();
-  Promise.all([loadBlocks(), loadNicks()]).then(loadFriends);
+  Promise.all([loadBlocks(), loadNicks(), loadPrivate()]).then(loadFriends);
   loadSettings();
   subscribeDM();
   subscribeFriends();
@@ -684,6 +709,13 @@ $("delGo").onclick = async () => {
   } catch (e) { alert("Couldn’t delete the account: " + (e.message || e)); }
   b.textContent = "Delete forever"; b.disabled = $("delTxt").value.trim() !== "DELETE";
 };
+
+/* ---- private real name (only you can see it) ---- */
+let myFull = "";
+async function loadPrivate() {
+  const { data } = await sb.from("profile_private").select("first_name,last_name").maybeSingle();
+  myFull = data ? data.first_name + " " + data.last_name : "";
+}
 
 /* ---- private nicknames ---- */
 async function loadNicks() {
