@@ -123,6 +123,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
   <div id="err"></div>
   <button class="btn" id="go">Log in</button>
+  <button class="link" id="forgot">Forgot password?</button>
   <div id="legal">By continuing you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</div>
   <button class="link" id="swap">New here? Create an account</button>
 </div></div>
@@ -171,6 +172,14 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <input type="text" id="nkTxt" maxlength="30" placeholder="Nickname" autocomplete="off">
   <div class="sub" style="padding:0">Only you can see this nickname.</div>
   <button class="bt pri" id="nkSave">Save</button><button class="bt" id="nkClear">Remove nickname</button><button class="bt" id="nkCancel">Cancel</button></div></div>
+<div class="ov" id="edit"><div class="bx"><h3>Edit message</h3>
+  <textarea id="edTxt" rows="3" maxlength="1000"></textarea>
+  <button class="bt pri" id="edSave">Save</button><button class="bt" id="edCancel">Cancel</button></div></div>
+<div class="ov" id="reset" style="z-index:60"><div class="bx"><h3>Set a new password</h3>
+  <input type="password" id="rpw1" placeholder="New password (6+ characters)" autocomplete="new-password">
+  <input type="password" id="rpw2" placeholder="Repeat new password" autocomplete="new-password">
+  <div id="rpErr" style="color:#d33;font-size:14px;min-height:18px"></div>
+  <button class="bt pri" id="rpSave">Save password</button></div></div>
 <div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
   <select id="repReason"><option value="spam">Spam</option><option value="harassment">Harassment or bullying</option><option value="inappropriate">Inappropriate content</option><option value="scam">Scam or fraud</option><option value="other">Something else</option></select>
   <textarea id="repDetails" rows="3" maxlength="500" placeholder="Add details (optional)"></textarea>
@@ -244,12 +253,13 @@ $("swap").onclick = () => {
   signup = !signup;
   $("user").style.display = signup ? "block" : "none";
   $("go").textContent = signup ? "Create account" : "Log in";
+  $("forgot").style.display = signup ? "none" : "block";
   $("swap").textContent = signup ? "Have an account? Log in" : "New here? Create an account";
   $("err").textContent = "";
 };
 
 $("go").onclick = async () => {
-  $("err").textContent = "";
+  $("err").textContent = ""; $("err").style.color = "";
   const email = $("email").value.trim(), password = $("pass").value;
   let r;
   if (signup) {
@@ -266,6 +276,7 @@ $("go").onclick = async () => {
 $("out").onclick = () => sb.auth.signOut();
 
 sb.auth.onAuthStateChange((_e, session) => {
+  if (_e === "PASSWORD_RECOVERY") { $("rpw1").value = ""; $("rpw2").value = ""; $("rpErr").textContent = ""; $("reset").style.display = "flex"; }
   if (session) { me = session.user.id; $("auth").style.display = "none"; $("app").style.display = "flex"; start(); }
   else { me = null; $("app").style.display = "none"; $("auth").style.display = "flex"; if (sub) sb.removeChannel(sub); }
 });
@@ -283,6 +294,7 @@ async function start() {
   subscribeDM();
   subscribeFriends();
   subscribeReceipts();
+  subscribeEdits();
   markAllDelivered();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c, true));
   if (dm) openDM(dm); else openChannel(channel);
@@ -290,7 +302,7 @@ async function start() {
 
 async function openChannel(c, user) {
   if (user) showChat();
-  channel = c; dm = null; seen = new Set(); ticks = {}; paintFriends(); updateBar();
+  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; paintFriends(); updateBar();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -326,9 +338,15 @@ function add(m) {
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
   const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
+  const ed = document.createElement("span"); ed.textContent = m.edited_at ? " · edited" : ""; tm.appendChild(ed);
   if (m.recipient_id && m.user_id === me) { const tk = document.createElement("span"); tk.style.marginLeft = "6px"; ticks[m.id] = tk; paintTick(tk, m); tm.appendChild(tk); }
   if (m.user_id !== me) { const rl = document.createElement("span"); rl.className = "rp"; rl.textContent = "Report"; rl.onclick = () => openReport({ userId: m.user_id, kind: m.recipient_id ? "dm" : "channel", id: m.id }); tm.appendChild(rl); }
-  mw.append(d, tm); box.appendChild(mw);
+  if (m.user_id === me) {
+    if (m.text) { const ea = document.createElement("span"); ea.className = "rp"; ea.textContent = "Edit"; ea.onclick = () => openEdit(m); tm.appendChild(ea); }
+    const da = document.createElement("span"); da.className = "rp"; da.textContent = "Delete"; da.onclick = () => deleteMsg(m); tm.appendChild(da);
+  }
+  els[m.id] = { mw: null, t, ed, m };
+  mw.append(d, tm); box.appendChild(mw); els[m.id].mw = mw;
   if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
 }
 
@@ -344,7 +362,7 @@ async function send() {
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], els = {}, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -466,7 +484,7 @@ function paintFriends() {
 
 async function openDM(uid, user) {
   if (user) showChat();
-  dm = uid; unread.delete(uid); seen = new Set(); ticks = {};
+  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {};
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
@@ -644,7 +662,7 @@ $("more").onclick = () => { $("shName").textContent = dn(dm); $("sheet").style.d
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del", "nick"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick", "edit"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -693,6 +711,60 @@ $("nkCancel").onclick = () => { $("nick").style.display = "none"; };
 $("nkTxt").addEventListener("keydown", e => { if (e.key === "Enter") saveNick(nickFor, $("nkTxt").value); });
 
 if (window.PULSE_CONTACT) $("contactLink").href = "mailto:" + window.PULSE_CONTACT; else $("contactLink").style.display = "none";
+/* ---- forgot password ---- */
+$("forgot").onclick = async () => {
+  const email = $("email").value.trim(); $("err").style.color = "";
+  if (!email) { $("err").textContent = "Type your email above first."; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  $("err").style.color = error ? "" : "var(--muted)";
+  $("err").textContent = error ? error.message : "If that email has an account, we’ve sent a reset link. Check your inbox and spam folder.";
+};
+$("rpSave").onclick = async () => {
+  const a = $("rpw1").value, b = $("rpw2").value;
+  if (a.length < 6) { $("rpErr").textContent = "Use at least 6 characters."; return; }
+  if (a !== b) { $("rpErr").textContent = "The two passwords don’t match."; return; }
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error) { $("rpErr").textContent = error.message; return; }
+  $("reset").style.display = "none"; alert("Your password was changed.");
+};
+
+/* ---- edit & delete messages ---- */
+let edCtx = null;
+function openEdit(m) { edCtx = m; $("edTxt").value = m.text; $("edit").style.display = "flex"; $("edTxt").focus(); }
+$("edCancel").onclick = () => { $("edit").style.display = "none"; };
+$("edSave").onclick = async () => {
+  const m = edCtx, text = $("edTxt").value.trim();
+  if (!m || !text || text === m.text) { $("edit").style.display = "none"; return; }
+  const { error } = await sb.from(m.recipient_id ? "direct_messages" : "messages").update({ text, edited_at: nowIso() }).eq("id", m.id);
+  if (error) { alert("Couldn’t edit: " + error.message); return; }
+  applyEdit({ id: m.id, text, mood: m.mood, edited_at: nowIso() });
+  $("edit").style.display = "none";
+};
+function applyEdit(row) {
+  const e = els[row.id]; if (!e) return;
+  e.m.text = row.text; e.m.edited_at = row.edited_at;
+  e.t.textContent = (row.mood || e.m.mood || "") + " " + row.text; e.t.style.display = row.text ? "" : "none";
+  e.ed.textContent = row.edited_at ? " · edited" : "";
+}
+function removeEl(id) { const e = els[id]; if (e && e.mw) { e.mw.remove(); delete els[id]; } }
+async function deleteMsg(m) {
+  if (!confirm("Delete this message for everyone? This can’t be undone.")) return;
+  const { error } = await sb.from(m.recipient_id ? "direct_messages" : "messages").delete().eq("id", m.id);
+  if (error) { alert("Couldn’t delete: " + error.message); return; }
+  removeEl(m.id);
+  if (m.file_path) sb.storage.from("attachments").remove([m.file_path]);
+}
+let editSub = null;
+async function subscribeEdits() {
+  if (editSub) await sb.removeChannel(editSub);
+  editSub = sb.channel("edits")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, p => { if (!dm) applyEdit(p.new); })
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, p => { if (!dm) removeEl(p.old.id); })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: "recipient_id=eq." + me }, p => { if (dm) applyEdit({ ...p.new }); })
+    .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages" }, p => { if (dm) removeEl(p.old.id); })
+    .subscribe();
+}
+
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
 </script>
