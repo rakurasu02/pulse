@@ -163,7 +163,11 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 </div></div>
 
 <div class="ov" id="sheet"><div class="bx"><h3 id="shName"></h3>
-  <button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
+  <button class="bt" id="shNick">✏️ Nickname</button><button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
+<div class="ov" id="nick"><div class="bx"><h3>Nickname</h3><div class="sub" id="nkReal" style="padding:0"></div>
+  <input type="text" id="nkTxt" maxlength="30" placeholder="Nickname" autocomplete="off">
+  <div class="sub" style="padding:0">Only you can see this nickname.</div>
+  <button class="bt pri" id="nkSave">Save</button><button class="bt" id="nkClear">Remove nickname</button><button class="bt" id="nkCancel">Cancel</button></div></div>
 <div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
   <select id="repReason"><option value="spam">Spam</option><option value="harassment">Harassment or bullying</option><option value="inappropriate">Inappropriate content</option><option value="scam">Scam or fraud</option><option value="other">Something else</option></select>
   <textarea id="repDetails" rows="3" maxlength="500" placeholder="Add details (optional)"></textarea>
@@ -271,7 +275,7 @@ async function loadNames() {
 
 async function start() {
   await loadNames();
-  loadBlocks().then(loadFriends);
+  Promise.all([loadBlocks(), loadNicks()]).then(loadFriends);
   loadSettings();
   subscribeDM();
   subscribeFriends();
@@ -313,7 +317,7 @@ function add(m) {
   if (blocked.has(m.user_id)) return;
   const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
-  const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (names[m.user_id] || "Someone");
+  const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (m.recipient_id ? dn(m.user_id) : (names[m.user_id] || "Someone"));
   const t = document.createElement("div"); t.textContent = (m.mood || "") + " " + m.text; if (!m.text) t.style.display = "none";
   d.append(w, t);
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
@@ -337,7 +341,7 @@ async function send() {
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -383,6 +387,7 @@ async function subscribeReceipts() {
 }
 document.addEventListener("visibilitychange", () => { if (dm) markIncoming(dm); });
 
+const dn = id => nick[id] || names[id] || "Someone";
 const partnerOf = r => r.sender_id === me ? r.recipient_id : r.sender_id;
 const answerMsg = (r, status) => act(sb.from("dm_requests").update({ status }).eq("id", r.id), "Couldn’t update");
 function connOf(uid) {
@@ -409,7 +414,7 @@ function updateBar() {
   $("more").style.display = dm ? "block" : "none";
   if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
   const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
-  const nm = names[dm] || "This person";
+  const nm = dn(dm);
   let text = "", btns = [];
   if (c === "incoming") { text = nm + " sent you a message request. Accept to reply."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted")), mkBtn("Decline", () => answerMsg(q, "declined"), "x")]; }
   else if (c === "declined") { text = "You declined this request."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted"))]; }
@@ -435,7 +440,7 @@ function paintFriends() {
   $("mrSec").style.display = inMsg.length ? "block" : "none";
   inMsg.forEach(r => {
     const id = r.sender_id;
-    const row = mkRow((unread.has(id) ? "● " : "") + (names[id] || "Someone"),
+    const row = mkRow((unread.has(id) ? "● " : "") + (dn(id)),
       [mkBtn("Accept", () => answerMsg(r, "accepted")), mkBtn("Decline", () => answerMsg(r, "declined"), "x")], () => openDM(id, true));
     if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
     mq.appendChild(row);
@@ -449,7 +454,7 @@ function paintFriends() {
   });
   if (!rows.length) { note(box, "No chats yet. Search for someone to message or add."); return; }
   rows.forEach(({ id, fr, pend }) => {
-    const row = mkRow((unread.has(id) ? "● " : "") + (names[id] || "Someone") + (pend ? " · request sent" : ""),
+    const row = mkRow((unread.has(id) ? "● " : "") + (dn(id)) + (pend ? " · request sent" : ""),
       fr ? [mkBtn("Remove", () => drop(fr), "x")] : [], () => openDM(id, true));
     if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
     box.appendChild(row);
@@ -460,7 +465,7 @@ async function openDM(uid, user) {
   if (user) showChat();
   dm = uid; unread.delete(uid); seen = new Set(); ticks = {};
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
-  $("ttl").textContent = names[uid] || "Chat"; setHeadAv((Array.from(names[uid] || "?")[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
+  $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
   paintFriends(); updateBar();
   const { data, error } = await sb.from("direct_messages").select("*")
@@ -632,11 +637,11 @@ $("repSend").onclick = async () => {
   if ($("repBlock").checked) await blockUser(repCtx.userId, true);
   alert("Thank you. Your report was sent.");
 };
-$("more").onclick = () => { $("shName").textContent = names[dm] || "this person"; $("sheet").style.display = "flex"; };
+$("more").onclick = () => { $("shName").textContent = dn(dm); $("sheet").style.display = "flex"; };
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -658,6 +663,31 @@ $("delGo").onclick = async () => {
   } catch (e) { alert("Couldn’t delete the account: " + (e.message || e)); }
   b.textContent = "Delete forever"; b.disabled = $("delTxt").value.trim() !== "DELETE";
 };
+
+/* ---- private nicknames ---- */
+async function loadNicks() {
+  const { data } = await sb.from("nicknames").select("target_id,nickname");
+  nick = {}; (data || []).forEach(r => { nick[r.target_id] = r.nickname; });
+}
+async function saveNick(uid, text) {
+  const t = (text || "").trim().slice(0, 30);
+  const { error } = t
+    ? await sb.from("nicknames").upsert({ owner_id: me, target_id: uid, nickname: t })
+    : await sb.from("nicknames").delete().eq("target_id", uid);
+  if (error) { alert("Couldn’t save the nickname: " + error.message); return; }
+  if (t) nick[uid] = t; else delete nick[uid];
+  $("nick").style.display = "none";
+  paintFriends(); if (dm === uid) openDM(uid);
+}
+$("shNick").onclick = () => {
+  nickFor = dm; $("sheet").style.display = "none";
+  $("nkReal").textContent = "Username: " + (names[dm] || "unknown");
+  $("nkTxt").value = nick[dm] || ""; $("nick").style.display = "flex"; $("nkTxt").focus();
+};
+$("nkSave").onclick = () => saveNick(nickFor, $("nkTxt").value);
+$("nkClear").onclick = () => saveNick(nickFor, "");
+$("nkCancel").onclick = () => { $("nick").style.display = "none"; };
+$("nkTxt").addEventListener("keydown", e => { if (e.key === "Enter") saveNick(nickFor, $("nkTxt").value); });
 
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
