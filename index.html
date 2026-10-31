@@ -49,6 +49,11 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .srow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .srow select{padding:6px 8px;border-radius:8px}
 .srow input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.mw{display:flex;flex-direction:column;max-width:78%;align-self:flex-start}
+.mw.me{align-self:flex-end}
+.mw .m{max-width:100%}
+.tm{font-size:11px;color:var(--muted);margin:3px 8px 0}
+.mw.me .tm{text-align:right}
 .room{display:flex;align-items:center}
 .room::before{content:"# "}
 .av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;margin-right:10px}
@@ -71,7 +76,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
  .hit button{padding:6px 12px;font-size:14px}
  .sec{margin:16px 8px 6px}
  #msgs{padding:12px}
- .m{max-width:84%}
+ .mw{max-width:84%}
 }
 </style>
 </head>
@@ -237,6 +242,12 @@ async function openChannel(c, user) {
     async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && S.sound) beep(); add(p.new); }).subscribe();
 }
 
+function fmtTime(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  const yr = d.getFullYear() === new Date().getFullYear() ? undefined : "numeric";
+  return d.toLocaleDateString([], { month: "short", day: "numeric", year: yr }) + " · " +
+         d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
 function add(m) {
   if (seen.has(m.id)) return; seen.add(m.id);
   const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
@@ -245,7 +256,9 @@ function add(m) {
   const t = document.createElement("div"); t.textContent = (m.mood || "") + " " + m.text; if (!m.text) t.style.display = "none";
   d.append(w, t);
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
-  box.appendChild(d);
+  const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
+  const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
+  mw.append(d, tm); box.appendChild(mw);
   if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
 }
 
