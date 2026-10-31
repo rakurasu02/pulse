@@ -230,13 +230,15 @@ async function start() {
   loadSettings();
   subscribeDM();
   subscribeFriends();
+  subscribeReceipts();
+  markAllDelivered();
   document.querySelectorAll(".room").forEach(b => b.onclick = () => openChannel(b.dataset.c, true));
   if (dm) openDM(dm); else openChannel(channel);
 }
 
 async function openChannel(c, user) {
   if (user) showChat();
-  channel = c; dm = null; seen = new Set(); paintFriends(); updateBar();
+  channel = c; dm = null; seen = new Set(); ticks = {}; paintFriends(); updateBar();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = "# " + c; $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -247,6 +249,10 @@ async function openChannel(c, user) {
     async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && S.sound) beep(); add(p.new); }).subscribe();
 }
 
+function paintTick(el, m) {
+  el.textContent = m.seen_at ? "✓✓ Seen" : m.delivered_at ? "✓✓ Delivered" : "✓ Sent";
+  el.style.color = m.seen_at ? "var(--accent)" : "";
+}
 function fmtTime(iso) {
   const d = iso ? new Date(iso) : new Date();
   const yr = d.getFullYear() === new Date().getFullYear() ? undefined : "numeric";
@@ -263,6 +269,7 @@ function add(m) {
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
   const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
+  if (m.recipient_id && m.user_id === me) { const tk = document.createElement("span"); tk.style.marginLeft = "6px"; ticks[m.id] = tk; paintTick(tk, m); tm.appendChild(tk); }
   mw.append(d, tm); box.appendChild(mw);
   if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
 }
@@ -279,7 +286,7 @@ async function send() {
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -303,7 +310,27 @@ async function loadFriends() {
   const ids = [...fs.map(other), ...mr.map(r => r.sender_id === me ? r.recipient_id : r.sender_id)];
   if (ids.some(id => !names[id])) await loadNames();
   paintFriends(); runFind(); updateBar();
+  if (dm) markIncoming(dm);
 }
+
+/* ---- sent / delivered / seen ---- */
+const nowIso = () => new Date().toISOString();
+async function markAllDelivered() {
+  await sb.from("direct_messages").update({ delivered_at: nowIso() }).eq("recipient_id", me).is("delivered_at", null);
+}
+async function markIncoming(uid) {
+  if (connOf(uid) !== "ok" || document.visibilityState !== "visible") return;
+  const t = nowIso();
+  await sb.from("direct_messages").update({ delivered_at: t }).eq("recipient_id", me).eq("sender_id", uid).is("delivered_at", null);
+  await sb.from("direct_messages").update({ seen_at: t }).eq("recipient_id", me).eq("sender_id", uid).is("seen_at", null);
+}
+async function subscribeReceipts() {
+  if (dmUpSub) await sb.removeChannel(dmUpSub);
+  dmUpSub = sb.channel("dm-receipts").on("postgres_changes",
+    { event: "UPDATE", schema: "public", table: "direct_messages", filter: "sender_id=eq." + me },
+    p => { const el = ticks[p.new.id]; if (el) paintTick(el, p.new); }).subscribe();
+}
+document.addEventListener("visibilitychange", () => { if (dm) markIncoming(dm); });
 
 const partnerOf = r => r.sender_id === me ? r.recipient_id : r.sender_id;
 const answerMsg = (r, status) => act(sb.from("dm_requests").update({ status }).eq("id", r.id), "Couldn’t update");
@@ -377,7 +404,7 @@ function paintFriends() {
 
 async function openDM(uid, user) {
   if (user) showChat();
-  dm = uid; unread.delete(uid); seen = new Set();
+  dm = uid; unread.delete(uid); seen = new Set(); ticks = {};
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = "💬 " + (names[uid] || "Chat"); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
@@ -388,6 +415,7 @@ async function openDM(uid, user) {
   if (dm !== uid) return;
   if (error) { alert("Couldn’t load chat: " + error.message); return; }
   (data || []).reverse().forEach(m => add({ ...m, user_id: m.sender_id }));
+  markIncoming(uid);
 }
 
 async function subscribeDM() {
@@ -401,6 +429,8 @@ async function subscribeDM() {
       if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
       if (S.sound) beep();
       paintFriends();
+      markAllDelivered();
+      if (dm === m.sender_id) markIncoming(m.sender_id);
     }).subscribe();
 }
 
