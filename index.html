@@ -52,6 +52,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .mw{display:flex;flex-direction:column;max-width:78%;align-self:flex-start}
 .mw.me{align-self:flex-end}
 .mw .m{max-width:100%}
+#dmbar{display:none;align-items:center;gap:8px;padding:10px 14px;background:var(--their);font-size:14px;border-top:1px solid var(--line)}
+#dmbar button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px}
+#dmbar button.x{background:var(--panel);color:var(--muted)}
 .tm{font-size:11px;color:var(--muted);margin:3px 8px 0}
 .mw.me .tm{text-align:right}
 .room{display:flex;align-items:center}
@@ -101,11 +104,13 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
       <button class="room" data-c="ideas">ideas</button>
     </div>
     <div class="sec" id="reqSec" style="display:none">Friend requests</div><div id="reqs"></div>
+    <div class="sec" id="mrSec" style="display:none">Message requests</div><div id="mreqs"></div>
     <div class="sec">Chats</div><div id="friends"><div class="sub">No chats yet</div></div>
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
     <div id="head"><span><button id="back" title="Back">‹</button><span id="ttl"></span></span><button id="gear" title="Settings">⚙️</button></div><div id="msgs"></div>
+    <div id="dmbar"></div>
     <div id="bar">
       <button id="attach" title="Send image or file" style="border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:18px;cursor:pointer">📎</button><input type="file" id="file" hidden>
       <select id="mood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select>
@@ -231,7 +236,7 @@ async function start() {
 
 async function openChannel(c, user) {
   if (user) showChat();
-  channel = c; dm = null; seen = new Set(); paintFriends();
+  channel = c; dm = null; seen = new Set(); paintFriends(); updateBar();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = "# " + c; $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -266,14 +271,15 @@ async function send() {
   const text = $("txt").value.trim(); if (!text) return;
   $("txt").value = "";
   const target = dm, mood = $("mood").value;
+  if (target && !(await ensureConn(target))) { $("txt").value = text; return; }
   const { data, error } = target
     ? await sb.from("direct_messages").insert({ recipient_id: target, text, mood }).select().single()
     : await sb.from("messages").insert({ channel, text, mood }).select().single();
-  if (error) { $("txt").value = text; alert("Couldn’t send: " + error.message); return; }
+  if (error) { $("txt").value = text; alert(/row-level security/.test(error.message) ? "Couldn’t send. If they haven’t accepted your message request yet, you can only send 3 messages." : "Couldn’t send: " + error.message); return; }
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -292,10 +298,48 @@ const accept = r => act(sb.from("friendships").update({ status: "accepted" }).eq
 const drop = r => act(sb.from("friendships").delete().eq("id", r.id), "Couldn’t remove");
 
 async function loadFriends() {
-  const { data } = await sb.from("friendships").select("*");
-  fs = data || [];
-  if (fs.some(r => !names[other(r)])) await loadNames();
-  paintFriends(); runFind();
+  const [a, b] = await Promise.all([sb.from("friendships").select("*"), sb.from("dm_requests").select("*")]);
+  fs = a.data || []; mr = b.data || [];
+  const ids = [...fs.map(other), ...mr.map(r => r.sender_id === me ? r.recipient_id : r.sender_id)];
+  if (ids.some(id => !names[id])) await loadNames();
+  paintFriends(); runFind(); updateBar();
+}
+
+const partnerOf = r => r.sender_id === me ? r.recipient_id : r.sender_id;
+const answerMsg = (r, status) => act(sb.from("dm_requests").update({ status }).eq("id", r.id), "Couldn’t update");
+function connOf(uid) {
+  if (fs.some(r => r.status === "accepted" && other(r) === uid)) return "ok";
+  const q = mr.find(r => r.sender_id === uid || r.recipient_id === uid);
+  if (!q) return "none";
+  if (q.status === "accepted") return "ok";
+  if (q.status === "declined") return q.sender_id === me ? "blocked" : "declined";
+  return q.sender_id === me ? "pending" : "incoming";
+}
+async function ensureConn(uid) {
+  const c = connOf(uid);
+  if (c === "ok" || c === "pending") return true;
+  if (c === "none") {
+    const { error } = await sb.from("dm_requests").insert({ recipient_id: uid });
+    if (error) { alert("Couldn’t start the chat: " + error.message); return false; }
+    await loadFriends(); return true;
+  }
+  return false;
+}
+function updateBar() {
+  const bar = $("dmbar"), comp = $("bar");
+  if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
+  const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
+  const nm = names[dm] || "This person";
+  let text = "", btns = [];
+  if (c === "incoming") { text = nm + " sent you a message request. Accept to reply."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted")), mkBtn("Decline", () => answerMsg(q, "declined"), "x")]; }
+  else if (c === "declined") { text = "You declined this request."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted"))]; }
+  else if (c === "blocked") text = "You can’t message this person.";
+  else if (c === "pending") text = "Message request sent. You can send up to 3 messages until they accept.";
+  else if (c === "none") text = "You’re not friends yet. Your first message will be sent as a message request.";
+  bar.innerHTML = "";
+  if (text) { const sp = document.createElement("span"); sp.style.flex = "1"; sp.textContent = text; bar.append(sp, ...btns); }
+  bar.style.display = text ? "flex" : "none";
+  comp.style.display = (c === "incoming" || c === "declined" || c === "blocked") ? "none" : "flex";
 }
 
 function paintFriends() {
@@ -304,13 +348,28 @@ function paintFriends() {
   $("reqSec").style.display = incoming.length ? "block" : "none";
   incoming.forEach(r => rq.appendChild(mkRow(names[r.requester_id] || "Someone",
     [mkBtn("Accept", () => accept(r)), mkBtn("Decline", () => drop(r), "x")])));
-  const box = $("friends"); box.innerHTML = "";
-  const accepted = fs.filter(r => r.status === "accepted");
-  if (!accepted.length) { note(box, "No chats yet. Search for someone and send a friend request."); return; }
-  accepted.forEach(r => {
-    const id = other(r);
+
+  const inMsg = mr.filter(r => r.status === "pending" && r.recipient_id === me);
+  const mq = $("mreqs"); mq.innerHTML = "";
+  $("mrSec").style.display = inMsg.length ? "block" : "none";
+  inMsg.forEach(r => {
+    const id = r.sender_id;
     const row = mkRow((unread.has(id) ? "● " : "") + (names[id] || "Someone"),
-      [mkBtn("Remove", () => drop(r), "x")], () => openDM(id, true));
+      [mkBtn("Accept", () => answerMsg(r, "accepted")), mkBtn("Decline", () => answerMsg(r, "declined"), "x")], () => openDM(id, true));
+    if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
+    mq.appendChild(row);
+  });
+
+  const box = $("friends"); box.innerHTML = "";
+  const seenIds = new Set(), rows = [];
+  fs.filter(r => r.status === "accepted").forEach(r => { const id = other(r); if (!seenIds.has(id)) { seenIds.add(id); rows.push({ id, fr: r }); } });
+  mr.filter(r => r.status === "accepted" || (r.status === "pending" && r.sender_id === me)).forEach(r => {
+    const id = partnerOf(r); if (!seenIds.has(id)) { seenIds.add(id); rows.push({ id, pend: r.status === "pending" }); }
+  });
+  if (!rows.length) { note(box, "No chats yet. Search for someone to message or add."); return; }
+  rows.forEach(({ id, fr, pend }) => {
+    const row = mkRow((unread.has(id) ? "● " : "") + (names[id] || "Someone") + (pend ? " · request sent" : ""),
+      fr ? [mkBtn("Remove", () => drop(fr), "x")] : [], () => openDM(id, true));
     if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
     box.appendChild(row);
   });
@@ -322,7 +381,7 @@ async function openDM(uid, user) {
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = "💬 " + (names[uid] || "Chat"); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
-  paintFriends();
+  paintFriends(); updateBar();
   const { data, error } = await sb.from("direct_messages").select("*")
     .or("and(sender_id.eq." + me + ",recipient_id.eq." + uid + "),and(sender_id.eq." + uid + ",recipient_id.eq." + me + ")")
     .order("created_at", { ascending: false }).limit(100);
@@ -338,6 +397,7 @@ async function subscribeDM() {
     async p => {
       const m = p.new;
       if (!names[m.sender_id]) await loadNames();
+      if (connOf(m.sender_id) === "none") await loadFriends();
       if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
       if (S.sound) beep();
       paintFriends();
@@ -349,6 +409,9 @@ async function subscribeFriends() {
   let ch = sb.channel("friends-in");
   ["requester_id", "addressee_id"].forEach(col => ["INSERT", "UPDATE"].forEach(ev => {
     ch = ch.on("postgres_changes", { event: ev, schema: "public", table: "friendships", filter: col + "=eq." + me }, () => loadFriends());
+  }));
+  ["sender_id", "recipient_id"].forEach(col => ["INSERT", "UPDATE"].forEach(ev => {
+    ch = ch.on("postgres_changes", { event: ev, schema: "public", table: "dm_requests", filter: col + "=eq." + me }, () => loadFriends());
   }));
   frSub = ch.subscribe();
 }
@@ -371,7 +434,7 @@ async function runFind() {
     else if (rel.status === "accepted") { b = mkBtn("Friends"); b.disabled = true; }
     else if (rel.addressee_id === me) b = mkBtn("Accept", () => accept(rel));
     else { b = mkBtn("Requested"); b.disabled = true; }
-    box.appendChild(mkRow(u.username, [b]));
+    box.appendChild(mkRow(u.username, [b, mkBtn("Message", () => { $("find").value = ""; $("results").innerHTML = ""; openDM(u.id, true); }, "x")]));
   });
 }
 
@@ -424,6 +487,7 @@ $("file").onchange = async e => {
   const f = e.target.files[0]; e.target.value = "";
   if (!f) return;
   if (f.size > 50 * 1024 * 1024) { alert("Files must be under 50 MB (" + fmtSize(f.size) + " is too big)."); return; }
+  if (dm && !(await ensureConn(dm))) return;
   const target = dm, btn = $("attach"); btn.disabled = true; btn.textContent = "⏳";
   try {
     const safe = f.name.replace(/[^\w.\-]+/g, "_").slice(-80);
