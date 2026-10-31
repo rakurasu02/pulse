@@ -745,8 +745,9 @@ $("nkTxt").addEventListener("keydown", e => { if (e.key === "Enter") saveNick(ni
 if (window.PULSE_CONTACT) $("contactLink").href = "mailto:" + window.PULSE_CONTACT; else $("contactLink").style.display = "none";
 /* ---- forgot password ---- */
 $("forgot").onclick = async () => {
-  const email = $("email").value.trim(); $("err").style.color = "";
-  if (!email) { $("err").textContent = "Type your email above first."; return; }
+  const u = $("user").value.trim(), email = u.includes("@") ? u : $("email").value.trim();
+  $("err").style.color = "";
+  if (!email) { $("err").textContent = "Type your email address in the first box (not your username), then tap Forgot password."; return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
   $("err").style.color = error ? "" : "var(--muted)";
   $("err").textContent = error ? error.message : "If that email has an account, we’ve sent a reset link. Check your inbox and spam folder.";
