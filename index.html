@@ -55,6 +55,14 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #dmbar{display:none;align-items:center;gap:8px;padding:10px 14px;background:var(--their);font-size:14px;border-top:1px solid var(--line)}
 #dmbar button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px}
 #dmbar button.x{background:var(--panel);color:var(--muted)}
+.ov{display:none;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:12px}
+.ov .bx{background:var(--panel);color:var(--text);width:100%;max-width:400px;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;max-height:90%;overflow-y:auto}
+.ov h3{margin:0}
+.ov textarea,.ov select,.ov input[type=text]{padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;width:100%}
+.bt{border:0;border-radius:10px;padding:11px;font:inherit;cursor:pointer;background:var(--their);color:var(--text)}
+.bt.pri{background:var(--accent);color:#fff}.bt.dng{background:#d33;color:#fff}.bt:disabled{opacity:.5;cursor:default}
+#more{display:none;border:0;background:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px}
+.rp{margin-left:8px;color:var(--muted);text-decoration:underline;cursor:pointer}
 .tm{font-size:11px;color:var(--muted);margin:3px 8px 0}
 .mw.me .tm{text-align:right}
 .room{display:flex;align-items:center}
@@ -109,7 +117,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
-    <div id="head"><span><button id="back" title="Back">‹</button><span id="ttl"></span></span><button id="gear" title="Settings">⚙️</button></div><div id="msgs"></div>
+    <div id="head"><span><button id="back" title="Back">‹</button><span id="ttl"></span></span><span><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="msgs"></div>
     <div id="dmbar"></div>
     <div id="bar">
       <button id="attach" title="Send image or file" style="border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:18px;cursor:pointer">📎</button><input type="file" id="file" hidden>
@@ -126,8 +134,22 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sEnter">Press Enter to send</label><input type="checkbox" id="sEnter"></div>
   <div class="srow"><label for="sSound">Sound for new messages</label><input type="checkbox" id="sSound"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
+  <div class="sec">Blocked people</div><div id="sBlocked"></div>
+  <div class="sec">Account</div><button class="bt dng" id="delBtn">Delete my account</button>
   <div class="sub" id="sMe"></div>
 </div></div>
+
+<div class="ov" id="sheet"><div class="bx"><h3 id="shName"></h3>
+  <button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
+<div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
+  <select id="repReason"><option value="spam">Spam</option><option value="harassment">Harassment or bullying</option><option value="inappropriate">Inappropriate content</option><option value="scam">Scam or fraud</option><option value="other">Something else</option></select>
+  <textarea id="repDetails" rows="3" maxlength="500" placeholder="Add details (optional)"></textarea>
+  <label><input type="checkbox" id="repBlock"> Also block this person</label>
+  <button class="bt pri" id="repSend">Send report</button><button class="bt" id="repCancel">Cancel</button></div></div>
+<div class="ov" id="del"><div class="bx"><h3>Delete your account?</h3>
+  <div class="sub" style="padding:0">This permanently deletes your account, messages, chats, friends and uploaded files. It can’t be undone. Type <b>DELETE</b> to confirm.</div>
+  <input type="text" id="delTxt" placeholder="DELETE" autocomplete="off">
+  <button class="bt dng" id="delGo" disabled>Delete forever</button><button class="bt" id="delCancel">Cancel</button></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
@@ -162,7 +184,7 @@ function beep() {
   try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain();
     o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .05; o.start(); o.stop(c.currentTime + .12); } catch (e) {}
 }
-$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you"); $("set").style.display = "flex"; };
+$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you"); $("set").style.display = "flex"; paintBlocked(); };
 $("gear2").onclick = $("gear").onclick;
 $("sx").onclick = () => { $("set").style.display = "none"; };
 $("set").onclick = e => { if (e.target === $("set")) $("set").style.display = "none"; };
@@ -226,7 +248,7 @@ async function loadNames() {
 
 async function start() {
   await loadNames();
-  loadFriends();
+  loadBlocks().then(loadFriends);
   loadSettings();
   subscribeDM();
   subscribeFriends();
@@ -261,6 +283,7 @@ function fmtTime(iso) {
 }
 function add(m) {
   if (seen.has(m.id)) return; seen.add(m.id);
+  if (blocked.has(m.user_id)) return;
   const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
   const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (names[m.user_id] || "Someone");
@@ -270,6 +293,7 @@ function add(m) {
   const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
   if (m.recipient_id && m.user_id === me) { const tk = document.createElement("span"); tk.style.marginLeft = "6px"; ticks[m.id] = tk; paintTick(tk, m); tm.appendChild(tk); }
+  if (m.user_id !== me) { const rl = document.createElement("span"); rl.className = "rp"; rl.textContent = "Report"; rl.onclick = () => openReport({ userId: m.user_id, kind: m.recipient_id ? "dm" : "channel", id: m.id }); tm.appendChild(rl); }
   mw.append(d, tm); box.appendChild(mw);
   if (near || m.user_id === me) box.scrollTop = box.scrollHeight;
 }
@@ -282,11 +306,11 @@ async function send() {
   const { data, error } = target
     ? await sb.from("direct_messages").insert({ recipient_id: target, text, mood }).select().single()
     : await sb.from("messages").insert({ channel, text, mood }).select().single();
-  if (error) { $("txt").value = text; alert(/row-level security/.test(error.message) ? "Couldn’t send. If they haven’t accepted your message request yet, you can only send 3 messages." : "Couldn’t send: " + error.message); return; }
+  if (error) { $("txt").value = text; alert(/row-level security/.test(error.message) ? "Couldn’t send this message. They may not have accepted your message request yet (you can send 3 until they do), or you may not be able to message this person." : "Couldn’t send: " + error.message); return; }
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -306,7 +330,7 @@ const drop = r => act(sb.from("friendships").delete().eq("id", r.id), "Couldn’
 
 async function loadFriends() {
   const [a, b] = await Promise.all([sb.from("friendships").select("*"), sb.from("dm_requests").select("*")]);
-  fs = a.data || []; mr = b.data || [];
+  fs = (a.data || []).filter(r => !blocked.has(other(r))); mr = (b.data || []).filter(r => !blocked.has(partnerOf(r)));
   const ids = [...fs.map(other), ...mr.map(r => r.sender_id === me ? r.recipient_id : r.sender_id)];
   if (ids.some(id => !names[id])) await loadNames();
   paintFriends(); runFind(); updateBar();
@@ -335,6 +359,7 @@ document.addEventListener("visibilitychange", () => { if (dm) markIncoming(dm); 
 const partnerOf = r => r.sender_id === me ? r.recipient_id : r.sender_id;
 const answerMsg = (r, status) => act(sb.from("dm_requests").update({ status }).eq("id", r.id), "Couldn’t update");
 function connOf(uid) {
+  if (blocked.has(uid)) return "iblocked";
   if (fs.some(r => r.status === "accepted" && other(r) === uid)) return "ok";
   const q = mr.find(r => r.sender_id === uid || r.recipient_id === uid);
   if (!q) return "none";
@@ -354,19 +379,21 @@ async function ensureConn(uid) {
 }
 function updateBar() {
   const bar = $("dmbar"), comp = $("bar");
+  $("more").style.display = dm ? "block" : "none";
   if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
   const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
   const nm = names[dm] || "This person";
   let text = "", btns = [];
   if (c === "incoming") { text = nm + " sent you a message request. Accept to reply."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted")), mkBtn("Decline", () => answerMsg(q, "declined"), "x")]; }
   else if (c === "declined") { text = "You declined this request."; btns = [mkBtn("Accept", () => answerMsg(q, "accepted"))]; }
+  else if (c === "iblocked") { text = "You blocked this person."; btns = [mkBtn("Unblock", () => unblockUser(dm))]; }
   else if (c === "blocked") text = "You can’t message this person.";
   else if (c === "pending") text = "Message request sent. You can send up to 3 messages until they accept.";
   else if (c === "none") text = "You’re not friends yet. Your first message will be sent as a message request.";
   bar.innerHTML = "";
   if (text) { const sp = document.createElement("span"); sp.style.flex = "1"; sp.textContent = text; bar.append(sp, ...btns); }
   bar.style.display = text ? "flex" : "none";
-  comp.style.display = (c === "incoming" || c === "declined" || c === "blocked") ? "none" : "flex";
+  comp.style.display = (c === "incoming" || c === "declined" || c === "blocked" || c === "iblocked") ? "none" : "flex";
 }
 
 function paintFriends() {
@@ -424,6 +451,7 @@ async function subscribeDM() {
     { event: "INSERT", schema: "public", table: "direct_messages", filter: "recipient_id=eq." + me },
     async p => {
       const m = p.new;
+      if (blocked.has(m.sender_id)) return;
       if (!names[m.sender_id]) await loadNames();
       if (connOf(m.sender_id) === "none") await loadFriends();
       if (dm === m.sender_id) add({ ...m, user_id: m.sender_id }); else unread.add(m.sender_id);
@@ -455,7 +483,7 @@ async function runFind() {
   if (cleanQ() !== q) return;
   box.innerHTML = "";
   if (error || !data.length) { note(box, error ? "Search failed" : "No one found"); return; }
-  data.forEach(u => {
+  data.filter(u => !blocked.has(u.id)).forEach(u => {
     names[u.id] = u.username;
     const rel = relOf(u.id); let b;
     if (!rel) b = mkBtn("Add", async () => { b.disabled = true;
@@ -532,6 +560,76 @@ $("file").onchange = async e => {
     if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
   } catch (err) { alert("Couldn’t send file: " + (err.message || err)); }
   btn.disabled = false; btn.textContent = "📎";
+};
+
+/* ---- block, report, delete account ---- */
+async function loadBlocks() {
+  const { data } = await sb.from("blocks").select("blocked_id");
+  blocked = new Set((data || []).map(r => r.blocked_id));
+}
+function paintBlocked() {
+  const box = $("sBlocked"); box.innerHTML = "";
+  if (!blocked.size) { note(box, "No one blocked"); return; }
+  [...blocked].forEach(id => box.appendChild(mkRow(names[id] || "Someone", [mkBtn("Unblock", () => unblockUser(id), "x")])));
+}
+async function blockUser(uid, skipConfirm) {
+  if (!skipConfirm && !confirm("Block " + (names[uid] || "this person") + "? They won’t be able to message you or send requests, and you won’t see their messages.")) return false;
+  const { error } = await sb.from("blocks").insert({ blocked_id: uid });
+  if (error && error.code !== "23505") { alert("Couldn’t block: " + error.message); return false; }
+  blocked.add(uid);
+  await sb.from("friendships").delete().or("requester_id.eq." + uid + ",addressee_id.eq." + uid);
+  await sb.from("dm_requests").update({ status: "declined" }).eq("recipient_id", me).eq("sender_id", uid);
+  if (dm === uid) { if (isMobile() && history.state && history.state.chat) history.back(); else openChannel(channel); }
+  await loadFriends();
+  if (channel) openChannel(channel);
+  return true;
+}
+async function unblockUser(uid) {
+  const { error } = await sb.from("blocks").delete().eq("blocked_id", uid);
+  if (error) { alert("Couldn’t unblock: " + error.message); return; }
+  blocked.delete(uid); paintBlocked(); await loadFriends();
+}
+let repCtx = null;
+function openReport(ctx) {
+  repCtx = ctx; $("repWho").textContent = names[ctx.userId] || "this person";
+  $("repReason").value = "spam"; $("repDetails").value = ""; $("repBlock").checked = false;
+  $("rep").style.display = "flex";
+}
+$("repCancel").onclick = () => { $("rep").style.display = "none"; };
+$("repSend").onclick = async () => {
+  const row = { reported_id: repCtx.userId, reason: $("repReason").value, details: $("repDetails").value.trim().slice(0, 500) || null };
+  if (repCtx.id) { row.message_kind = repCtx.kind; row.message_id = repCtx.id; }
+  const { error } = await sb.from("reports").insert(row);
+  if (error) { alert("Couldn’t send the report: " + error.message); return; }
+  $("rep").style.display = "none";
+  if ($("repBlock").checked) await blockUser(repCtx.userId, true);
+  alert("Thank you. Your report was sent.");
+};
+$("more").onclick = () => { $("shName").textContent = names[dm] || "this person"; $("sheet").style.display = "flex"; };
+$("shCancel").onclick = () => { $("sheet").style.display = "none"; };
+$("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
+$("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
+["sheet", "rep", "del"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+
+$("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
+$("delCancel").onclick = () => { $("del").style.display = "none"; };
+$("delTxt").oninput = () => { $("delGo").disabled = $("delTxt").value.trim() !== "DELETE"; };
+$("delGo").onclick = async () => {
+  const b = $("delGo"); b.disabled = true; b.textContent = "Deleting…";
+  try {
+    for (let i = 0; i < 50; i++) {
+      const { data: list } = await sb.storage.from("attachments").list(me, { limit: 100 });
+      if (!list || !list.length) break;
+      const { error } = await sb.storage.from("attachments").remove(list.map(f => me + "/" + f.name));
+      if (error) break;
+    }
+    const { error } = await sb.rpc("delete_my_account");
+    if (error) throw error;
+    $("del").style.display = "none"; $("set").style.display = "none";
+    await sb.auth.signOut();
+    alert("Your account has been deleted.");
+  } catch (e) { alert("Couldn’t delete the account: " + (e.message || e)); }
+  b.textContent = "Delete forever"; b.disabled = $("delTxt").value.trim() !== "DELETE";
 };
 
 $("send").onclick = send;
