@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of Service · Pulse Messenger</title>
+<style>
+:root{--bg:#f6f4ff;--panel:#fff;--text:#1d1b2e;--muted:#6f6c85;--line:#e4e0f5;--accent:#6c4cf5}
+@media (prefers-color-scheme:dark){:root{--bg:#14121f;--panel:#1d1a2d;--text:#f0eeff;--muted:#9c98b8;--line:#2e2a45;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 18px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+h1{margin:6px 0 4px;color:var(--accent)}h2{margin:28px 0 6px;font-size:19px}p,li{margin:8px 0}ul{padding-left:22px}
+a{color:var(--accent)}.muted{color:var(--muted);font-size:14px}.unset{background:#ffe9a8;color:#5b4300;padding:0 4px;border-radius:4px}
+nav{display:flex;gap:14px;font-size:14px}
+</style></head><body><main>
+<nav><a href="index.html">← Back to Pulse</a><a href="privacy.html">Privacy Policy</a></nav>
+<div class="card">
+<h1>Terms of Service</h1>
+<p class="muted">Last updated: October 31, 2026</p>
+
+<p>These Terms govern your use of <b>Pulse Messenger</b> (“Pulse”), operated by <span data-f="PULSE_OPERATOR">Jeremiah Ferrer</span>. By creating an account or using Pulse you agree to these Terms and our <a href="privacy.html">Privacy Policy</a>. If you do not agree, do not use Pulse.</p>
+
+<h2>1. Who can use Pulse</h2>
+<p>You must be at least 13 years old (or the minimum age in your country, if higher). If you are under the age of majority where you live, you need a parent or guardian’s permission. You must give accurate sign-up details and keep your password secret. You are responsible for activity on your account.</p>
+
+<h2>2. Your content</h2>
+<p>You keep ownership of what you send. You give us permission to store, process and show it as needed to run Pulse, for example delivering your messages and files to the people you send them to. You promise you have the right to share what you send.</p>
+
+<h2>3. Rules</h2>
+<p>You must not use Pulse to:</p>
+<ul>
+<li>harass, bully, threaten or stalk anyone, or send hateful content;</li>
+<li>send spam, scams, phishing, or mass unwanted messages or friend requests;</li>
+<li>share sexual content involving minors, or any sexual content that is non-consensual. We have <b>zero tolerance</b> for child exploitation and will report it to the authorities;</li>
+<li>share graphic violence, content that promotes self-harm, or anything illegal;</li>
+<li>share malware, or try to hack, scrape, overload or bypass the security of Pulse;</li>
+<li>pretend to be another person or organisation;</li>
+<li>share other people’s private information without their consent;</li>
+<li>infringe intellectual property rights.</li>
+</ul>
+
+<h2>4. Safety tools and enforcement</h2>
+<p>You can block people and report messages or users. We may review reports and related content, remove content, limit features, suspend or permanently remove accounts, and share information with authorities where required by law or to protect someone from serious harm, with or without notice. We may act at our discretion to keep Pulse safe.</p>
+
+<h2>5. Privacy and security</h2>
+<p>Messages are <b>not end-to-end encrypted</b>. See the Privacy Policy for who can access what. Do not send passwords, payment details or other highly sensitive information through Pulse.</p>
+
+<h2>6. Ending your account</h2>
+<p>You can stop using Pulse any time and delete your account in Settings. We may suspend or end accounts that break these Terms. Sections that by nature should continue (such as disclaimers and limits of liability) will continue after your account ends.</p>
+
+<h2>7. The service is provided “as is”</h2>
+<p>Pulse is provided “as is” and “as available”, without promises that it will be uninterrupted, error-free, secure, or that messages will always be delivered or kept. Features may change or be removed. Do not rely on Pulse for emergencies.</p>
+
+<h2>8. Limit of liability</h2>
+<p>To the fullest extent allowed by law, Pulse and its operator are not liable for indirect, incidental or consequential losses, loss of data, or for content sent by other users. Nothing in these Terms limits liability that cannot be limited by law.</p>
+
+<h2>9. Changes to these Terms</h2>
+<p>We may update these Terms. If you keep using Pulse after a change takes effect, you accept the updated Terms. We will update the date above and, for important changes, tell you in the app.</p>
+
+<h2>10. Governing law</h2>
+<p>These Terms are governed by the laws of <span data-f="PULSE_COUNTRY">the Philippines</span>, and disputes will be handled by the courts there, unless your local consumer laws say otherwise.</p>
+
+<h2>11. Contact</h2>
+<p>Questions, abuse reports and legal requests: <a data-f="PULSE_CONTACT" href="mailto:rakurasu02@gmail.com">rakurasu02@gmail.com</a></p>
+
+</div></main>
+<script src="config.js"></script>
+<script>
+document.querySelectorAll("[data-f]").forEach(el=>{
+  const v=window[el.dataset.f];
+  if(v && !/example\.com|^Your /.test(v)){ el.textContent=v; if(el.tagName==="A") el.href="mailto:"+v; }
+});
+</script></body></html>

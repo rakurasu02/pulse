@@ -55,6 +55,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #dmbar{display:none;align-items:center;gap:8px;padding:10px 14px;background:var(--their);font-size:14px;border-top:1px solid var(--line)}
 #dmbar button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px}
 #dmbar button.x{background:var(--panel);color:var(--muted)}
+#legal{font-size:12px;color:var(--muted);text-align:center}#legal a,.lk a{color:var(--accent)}
 .ov{display:none;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:12px}
 .ov .bx{background:var(--panel);color:var(--text);width:100%;max-width:400px;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;max-height:90%;overflow-y:auto}
 .ov h3{margin:0}
@@ -122,6 +123,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
   <div id="err"></div>
   <button class="btn" id="go">Log in</button>
+  <div id="legal">By continuing you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</div>
   <button class="link" id="swap">New here? Create an account</button>
 </div></div>
 
@@ -158,6 +160,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sSound">Sound for new messages</label><input type="checkbox" id="sSound"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
   <div class="sec">Blocked people</div><div id="sBlocked"></div>
+  <div class="sub lk"><a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a id="contactLink" href="#" target="_blank" rel="noopener">Contact</a></div>
   <div class="sec">Account</div><button class="bt dng" id="delBtn">Delete my account</button>
   <div class="sub" id="sMe"></div>
 </div></div>
@@ -689,6 +692,7 @@ $("nkClear").onclick = () => saveNick(nickFor, "");
 $("nkCancel").onclick = () => { $("nick").style.display = "none"; };
 $("nkTxt").addEventListener("keydown", e => { if (e.key === "Enter") saveNick(nickFor, $("nkTxt").value); });
 
+if (window.PULSE_CONTACT) $("contactLink").href = "mailto:" + window.PULSE_CONTACT; else $("contactLink").style.display = "none";
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
 </script>
