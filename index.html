@@ -71,6 +71,15 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .grid2 img{width:100%;height:90px;object-fit:cover;border-radius:8px;cursor:pointer}
 .egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;overflow-y:auto;max-height:50vh}
 .egrid button{border:0;background:none;font-size:24px;cursor:pointer;border-radius:8px;padding:4px}.egrid button:hover{background:var(--their)}
+.av{position:relative}
+.dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#2fbf71;border:2px solid var(--panel);font-style:normal}
+.ht{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+#hsub{font-size:12px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#srch{border:0;background:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px 8px}
+#pinbar{display:none;align-items:center;gap:8px;padding:6px 16px;background:var(--their);font-size:13px;cursor:pointer;border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.c2{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--bg);overflow-wrap:anywhere}
+.c2 small{color:var(--muted);display:block}
+.wide{display:block;width:100%;margin-top:6px}
 .fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
 .rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .rq b{display:block;font-size:12px}
@@ -171,7 +180,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="me"></div><button class="link" id="out">Log out</button>
   </nav>
   <section id="main">
-    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span id="ttl"></span></span><span><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="msgs"></div>
+    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
     <div id="typing"></div>
     <div id="dmbar"></div>
     <div id="replybar"></div>
@@ -193,6 +202,16 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sDnd">Do not disturb</label><select id="sDnd"><option value="keep">Choose…</option><option value="off">Off</option><option value="1">For 1 hour</option><option value="8">For 8 hours</option><option value="inf">Until I turn it off</option></select></div>
   <div class="sub" id="sDndNote"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
+  <div class="sec">My profile</div>
+  <div style="display:flex;align-items:center;gap:10px"><span class="av" id="myAv" style="width:56px;height:56px;font-size:22px;margin:0"></span>
+    <div style="flex:1"><button class="bt wide" id="avPick" style="margin:0 0 6px">Change photo</button><button class="bt wide" id="avDel" style="margin:0">Remove photo</button></div></div>
+  <input type="file" id="avFile" accept="image/*" hidden>
+  <textarea id="bioTxt" rows="2" maxlength="150" placeholder="Bio (up to 150 characters)" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit"></textarea>
+  <input type="text" id="stTxt" list="stlist" maxlength="40" placeholder="Status, e.g. Available" style="width:100%;margin-top:6px">
+  <datalist id="stlist"><option value="Available"><option value="Busy"><option value="Away"><option value="At school"><option value="At work"><option value="In a meeting"><option value="Sleeping"></datalist>
+  <button class="bt pri wide" id="profSave">Save profile</button>
+  <div class="srow"><label for="sShow">Show when I’m online and my last seen</label><input type="checkbox" id="sShow"></div>
+  <button class="bt wide" id="starBtn">⭐ Starred messages</button>
   <div class="sec">Blocked people</div><div id="sBlocked"></div>
   <div class="sub lk"><a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a id="contactLink" href="#" target="_blank" rel="noopener">Contact</a></div>
   <a id="adminLink" href="admin.html" class="bt" style="display:none;text-align:center;text-decoration:none;margin-top:8px">🛠 Admin panel</a>
@@ -217,11 +236,18 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 <div class="ov" id="mm"><div class="bx">
   <div id="mmEmo" style="display:flex;justify-content:space-between"></div>
   <button class="bt" id="mmReply">↩ Reply</button><button class="bt" id="mmFwd">↪ Forward</button>
-  <button class="bt" id="mmCopy">📋 Copy text</button><button class="bt" id="mmEdit">✏️ Edit</button>
+  <button class="bt" id="mmPin">📌 Pin</button><button class="bt" id="mmStar">⭐ Star</button><button class="bt" id="mmCopy">📋 Copy text</button><button class="bt" id="mmEdit">✏️ Edit</button>
   <button class="bt" id="mmDel" style="color:#d33">🗑 Delete</button><button class="bt" id="mmRep">⚑ Report</button>
   <button class="bt" id="mmClose">Close</button></div></div>
 <div class="ov" id="fw"><div class="bx"><h3>Forward to…</h3>
   <div id="fwList" style="display:flex;flex-direction:column;gap:6px"></div><button class="bt" id="fwCancel">Cancel</button></div></div>
+<div class="ov" id="sr"><div class="bx"><h3>Search this chat</h3><input type="text" id="srQ" placeholder="Type at least 2 letters…" autocomplete="off">
+  <div id="srList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:50vh"></div><button class="bt" id="srClose">Close</button></div></div>
+<div class="ov" id="pins"><div class="bx"><h3>📌 Pinned messages</h3><div id="pinList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:55vh"></div><button class="bt" id="pinsClose">Close</button></div></div>
+<div class="ov" id="stars"><div class="bx"><h3>⭐ Starred messages</h3><div id="starList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:55vh"></div><button class="bt" id="starsClose">Close</button></div></div>
+<div class="ov" id="prof"><div class="bx" style="align-items:center;text-align:center"><span class="av" id="pAv" style="width:96px;height:96px;font-size:36px;margin:0"></span>
+  <h3 id="pName"></h3><div class="sub" id="pUser" style="padding:0"></div><div id="pStatus"></div><div id="pBio" class="sub" style="padding:0;white-space:pre-wrap"></div><div class="sub" id="pSeen" style="padding:0"></div>
+  <button class="bt" id="pClose" style="width:100%">Close</button></div></div>
 <div class="ov" id="emo"><div class="bx"><h3>Emoji</h3><div class="egrid" id="egrid"></div><button class="bt" id="emoClose">Close</button></div></div>
 <div class="ov" id="gif"><div class="bx"><h3>GIFs</h3><input type="text" id="gifQ" placeholder="Search GIFs…" autocomplete="off">
   <div class="grid2" id="gifGrid"></div><div class="sub" style="padding:0">Powered by GIPHY</div><button class="bt" id="gifClose">Close</button></div></div>
@@ -268,7 +294,7 @@ function beep() {
   try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain();
     o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .05; o.start(); o.stop(c.currentTime + .12); } catch (e) {}
 }
-$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you") + (myFull ? " (" + myFull + ")" : ""); $("set").style.display = "flex"; paintBlocked(); };
+$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you") + (myFull ? " (" + myFull + ")" : ""); $("set").style.display = "flex"; paintBlocked(); fillProfileForm(); };
 $("gear2").onclick = $("gear").onclick;
 $("sx").onclick = () => { $("set").style.display = "none"; };
 $("set").onclick = e => { if (e.target === $("set")) $("set").style.display = "none"; };
@@ -347,8 +373,9 @@ sb.auth.onAuthStateChange((_e, session) => {
 });
 
 async function loadNames() {
-  const { data } = await sb.from("profiles").select("id,username");
-  (data || []).forEach(p => names[p.id] = p.username);
+  let { data, error } = await sb.from("profiles").select("id,username,bio,status,avatar_path");
+  if (error) ({ data } = await sb.from("profiles").select("id,username"));
+  (data || []).forEach(p => { names[p.id] = p.username; prof[p.id] = p; });
   $("me").textContent = "Signed in as " + (names[me] || "you");
 }
 
@@ -357,6 +384,8 @@ async function start() {
   Promise.all([loadBlocks(), loadNicks(), loadPrivate()]).then(loadFriends);
   loadUnread();
   checkAdmin();
+  startPresence();
+  loadStars();
   loadSettings();
   subscribeDM();
   subscribeFriends();
@@ -371,13 +400,13 @@ async function start() {
 async function openChannel(c, user) {
   if (user) showChat();
   if (!dm && channel) markChanRead(channel);
-  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); paintFriends(); updateBar(); markChanRead(c);
+  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins(); paintFriends(); updateBar(); markChanRead(c);
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
   const { data } = await sb.from("messages").select("*").eq("channel", c).order("created_at", { ascending: false }).limit(100);
   (data || []).reverse().forEach(add);
-  loadReactions();
+  loadReactions(); loadPins();
   sub = sb.channel("room-" + c).on("postgres_changes",
     { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
     async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && shouldBeep("ch:" + c)) beep(); add(p.new); }).subscribe();
@@ -387,9 +416,10 @@ function paintTick(el, m) {
   el.textContent = m.seen_at ? "✓✓ Seen" : m.delivered_at ? "✓✓ Delivered" : "✓ Sent";
   el.style.color = m.seen_at ? "var(--accent)" : "";
 }
-function setHeadAv(txt, isChan) {
-  const a = $("hav"); a.textContent = txt;
+function setHeadAv(txt, isChan, uid) {
+  const a = $("hav"); a.textContent = txt; a.onclick = null; a.style.cursor = ""; a.style.backgroundImage = "";
   a.style.background = isChan ? "var(--their)" : ""; a.style.color = isChan ? "var(--accent)" : "";
+  if (uid) setAv(a, uid);
 }
 function fmtTime(iso) {
   const d = iso ? new Date(iso) : new Date();
@@ -460,6 +490,7 @@ function mkRow(text, btns, onText) {
   if (onText) { n.style.cursor = "pointer"; n.onclick = onText; }
   r.append(av, n, ...btns); return r;
 }
+function mkRowU(uid, text, btns, onText) { const r = mkRow(text, btns, onText); setAv(r.children[0], uid); return r; }
 function note(box, text) { const s = document.createElement("div"); s.className = "sub"; s.textContent = text; box.appendChild(s); }
 async function act(promise, msg) { const { error } = await promise; if (error) alert(msg + ": " + error.message); else loadFriends(); }
 const accept = r => act(sb.from("friendships").update({ status: "accepted" }).eq("id", r.id), "Couldn’t accept");
@@ -518,7 +549,7 @@ async function ensureConn(uid) {
 }
 function updateBar() {
   const bar = $("dmbar"), comp = $("bar");
-  $("more").style.display = "block";
+  $("more").style.display = "block"; updateHeadSub();
   if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
   const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
   const nm = dn(dm);
@@ -539,7 +570,7 @@ function paintFriends() {
   const incoming = fs.filter(r => r.status === "pending" && r.addressee_id === me);
   const rq = $("reqs"); rq.innerHTML = "";
   $("reqSec").style.display = incoming.length ? "block" : "none";
-  incoming.forEach(r => rq.appendChild(mkRow(names[r.requester_id] || "Someone",
+  incoming.forEach(r => rq.appendChild(mkRowU(r.requester_id, names[r.requester_id] || "Someone",
     [mkBtn("Accept", () => accept(r)), mkBtn("Decline", () => drop(r), "x")])));
 
   const inMsg = mr.filter(r => r.status === "pending" && r.recipient_id === me);
@@ -547,7 +578,7 @@ function paintFriends() {
   $("mrSec").style.display = inMsg.length ? "block" : "none";
   inMsg.forEach(r => {
     const id = r.sender_id;
-    const row = mkRow((unread.has(id) ? "● " : "") + (dn(id)),
+    const row = mkRowU(id, (unread.has(id) ? "● " : "") + (dn(id)),
       [mkBtn("Accept", () => answerMsg(r, "accepted")), mkBtn("Decline", () => answerMsg(r, "declined"), "x")], () => openDM(id, true));
     if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
     mq.appendChild(row);
@@ -561,7 +592,7 @@ function paintFriends() {
   });
   if (!rows.length) { note(box, "No chats yet. Search for someone to message or add."); return; }
   rows.forEach(({ id, fr, pend }) => {
-    const row = mkRow((dn(id)) + (pend ? " · request sent" : "") + (S.muted.includes("dm:" + id) ? " 🔕" : ""),
+    const row = mkRowU(id, (dn(id)) + (pend ? " · request sent" : "") + (S.muted.includes("dm:" + id) ? " 🔕" : ""),
       fr ? [mkBtn("Remove", () => drop(fr), "x")] : [], () => openDM(id, true));
     const n = unreadDM[id] || (unread.has(id) ? 1 : 0);
     if (dm === id || n) row.children[1].style.fontWeight = "700";
@@ -573,9 +604,9 @@ function paintFriends() {
 async function openDM(uid, user) {
   if (user) showChat();
   if (!dm && channel) markChanRead(channel);
-  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping();
+  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins();
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
-  $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
+  $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false, uid); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
   paintFriends(); updateBar();
   const { data, error } = await sb.from("direct_messages").select("*")
@@ -584,7 +615,7 @@ async function openDM(uid, user) {
   if (dm !== uid) return;
   if (error) { alert("Couldn’t load chat: " + error.message); return; }
   (data || []).reverse().forEach(m => add({ ...m, user_id: m.sender_id }));
-  loadReactions();
+  loadReactions(); loadPins();
   markIncoming(uid);
 }
 
@@ -635,7 +666,7 @@ async function runFind() {
     else if (rel.status === "accepted") { b = mkBtn("Friends"); b.disabled = true; }
     else if (rel.addressee_id === me) b = mkBtn("Accept", () => accept(rel));
     else { b = mkBtn("Requested"); b.disabled = true; }
-    box.appendChild(mkRow(u.username, [b, mkBtn("Message", () => { $("find").value = ""; $("results").innerHTML = ""; openDM(u.id, true); }, "x")]));
+    box.appendChild(mkRowU(u.id, u.username, [b, mkBtn("Message", () => { $("find").value = ""; $("results").innerHTML = ""; openDM(u.id, true); }, "x")]));
   });
 }
 
@@ -762,7 +793,7 @@ $("shMute").onclick = () => {
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del", "nick", "edit", "mm", "fw", "emo", "gif"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick", "edit", "mm", "fw", "emo", "gif", "sr", "pins", "stars", "prof"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -776,6 +807,7 @@ $("delGo").onclick = async () => {
       const { error } = await sb.storage.from("attachments").remove(list.map(f => me + "/" + f.name));
       if (error) break;
     }
+    if (prof[me] && prof[me].avatar_path) await sb.storage.from("avatars").remove([prof[me].avatar_path]);
     const { error } = await sb.rpc("delete_my_account");
     if (error) throw error;
     $("del").style.display = "none"; $("set").style.display = "none";
@@ -788,6 +820,7 @@ $("delGo").onclick = async () => {
 /* ---- admin link (only shown to admins) ---- */
 async function checkAdmin() {
   const { data } = await sb.rpc("is_admin");
+  isAdmin = data === true;
   $("adminLink").style.display = data === true ? "block" : "none";
 }
 
@@ -886,6 +919,7 @@ async function subscribeEdits() {
       const r = (p.new && p.new.message_id) ? p.new : p.old;
       if (r && els[r.message_id] && r.kind === (dm ? "dm" : "channel")) loadReact(r.message_id, r.kind);
     })
+    .on("postgres_changes", { event: "*", schema: "public", table: "pins" }, () => loadPins())
     .subscribe();
 }
 
@@ -933,6 +967,10 @@ function openMenu(m) {
   $("mmDel").style.display = mine ? "block" : "none";
   $("mmRep").style.display = mine ? "none" : "block";
   $("mmCopy").style.display = m.text ? "block" : "none";
+  const kind = m.recipient_id ? "dm" : "channel";
+  $("mmPin").style.display = (m.recipient_id || isAdmin) ? "block" : "none";
+  $("mmPin").textContent = pins.some(x => x.message_id === m.id) ? "📌 Unpin" : "📌 Pin";
+  $("mmStar").textContent = starred.has(kind + ":" + m.id) ? "⭐ Unstar" : "⭐ Star";
   $("mm").style.display = "flex";
 }
 const closeMenu = () => { $("mm").style.display = "none"; };
@@ -1154,6 +1192,230 @@ async function loadUnread() {
   const { data: d } = await sb.from("direct_messages").select("sender_id").eq("recipient_id", me).is("seen_at", null).limit(1000);
   unreadDM = {}; (d || []).forEach(r => { unreadDM[r.sender_id] = (unreadDM[r.sender_id] || 0) + 1; });
   paintBadges(); paintFriends();
+}
+
+/* ---- profiles, presence, pins, stars, search ---- */
+let prof = {}, pins = [], starred = new Set(), isAdmin = false;
+let pres = {}, showMe = true, hbTimer = null, presTimer = null, presTick = 0;
+
+const avUrl = path => sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+const online = id => showMe && pres[id] && (Date.now() - new Date(pres[id]).getTime()) < 150000;
+function lastSeenText(id) {
+  if (!showMe || !pres[id]) return "";
+  const sec = (Date.now() - new Date(pres[id]).getTime()) / 1000;
+  if (sec < 150) return "Online";
+  if (sec < 3600) return "Active " + Math.max(1, Math.round(sec / 60)) + " min ago";
+  if (sec < 86400) return "Active " + Math.round(sec / 3600) + " h ago";
+  return "Last seen " + new Date(pres[id]).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+function setAv(el, id) {
+  const p = prof[id];
+  if (p && p.avatar_path) { el.textContent = ""; el.style.backgroundImage = 'url("' + encodeURI(avUrl(p.avatar_path)) + '")'; el.style.backgroundSize = "cover"; el.style.backgroundPosition = "center"; }
+  if (online(id)) { const d = document.createElement("i"); d.className = "dot"; el.appendChild(d); }
+  el.style.cursor = "pointer"; el.onclick = e => { e.stopPropagation(); openProfile(id); };
+}
+function updateHeadSub() {
+  const s = $("hsub"); if (!s) return;
+  if (!dm) { s.textContent = ""; return; }
+  const bits = []; const st = prof[dm] && prof[dm].status; if (st) bits.push(st);
+  const ls = lastSeenText(dm); if (ls) bits.push(ls);
+  s.textContent = bits.join(" · ");
+}
+function openProfile(id) {
+  const p = prof[id] || {}, a = $("pAv");
+  a.textContent = (Array.from(dn(id))[0] || "?").toUpperCase(); a.style.backgroundImage = ""; setAv(a, id); a.onclick = null; a.style.cursor = "";
+  $("pName").textContent = id === me ? (names[me] || "You") + " (you)" : dn(id);
+  $("pUser").textContent = "@" + (names[id] || "");
+  $("pStatus").textContent = p.status ? "● " + p.status : "";
+  $("pBio").textContent = p.bio || ""; $("pSeen").textContent = id === me ? "" : lastSeenText(id);
+  $("prof").style.display = "flex";
+}
+$("pClose").onclick = () => { $("prof").style.display = "none"; };
+
+/* my profile form */
+function fillProfileForm() {
+  const p = prof[me] || {}, a = $("myAv");
+  a.textContent = (Array.from(names[me] || "?")[0] || "?").toUpperCase(); a.style.backgroundImage = "";
+  if (p.avatar_path) { a.textContent = ""; a.style.backgroundImage = 'url("' + encodeURI(avUrl(p.avatar_path)) + '")'; a.style.backgroundSize = "cover"; a.style.backgroundPosition = "center"; }
+  $("bioTxt").value = p.bio || ""; $("stTxt").value = p.status || ""; $("sShow").checked = showMe;
+}
+$("profSave").onclick = async () => {
+  const bio = $("bioTxt").value.trim().slice(0, 150) || null, status = $("stTxt").value.trim().slice(0, 40) || null;
+  const { error } = await sb.from("profiles").update({ bio, status }).eq("id", me);
+  if (error) { alert("Couldn’t save your profile: " + error.message); return; }
+  prof[me] = { ...(prof[me] || {}), bio, status }; alert("Profile saved.");
+};
+$("avPick").onclick = () => $("avFile").click();
+$("avFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const img = await createImageBitmap(f, { imageOrientation: "from-image" });
+    const size = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = c.height = 256;
+    c.getContext("2d").drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 256, 256);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    const path = me + "/avatar-" + Date.now() + ".jpg", old = prof[me] && prof[me].avatar_path;
+    const up = await sb.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" });
+    if (up.error) throw up.error;
+    const { error } = await sb.from("profiles").update({ avatar_path: path }).eq("id", me);
+    if (error) throw error;
+    prof[me] = { ...(prof[me] || {}), avatar_path: path }; if (old) sb.storage.from("avatars").remove([old]);
+    fillProfileForm(); paintFriends();
+  } catch (err) { alert("Couldn’t use that photo: " + (err.message || err)); }
+};
+$("avDel").onclick = async () => {
+  const old = prof[me] && prof[me].avatar_path; if (!old) return;
+  const { error } = await sb.from("profiles").update({ avatar_path: null }).eq("id", me);
+  if (error) { alert("Couldn’t remove it: " + error.message); return; }
+  prof[me].avatar_path = null; sb.storage.from("avatars").remove([old]); fillProfileForm(); paintFriends();
+};
+
+/* online now / last seen */
+async function loadMyPresence() {
+  const { data } = await sb.from("user_presence").select("visible").eq("user_id", me).maybeSingle();
+  showMe = data ? data.visible !== false : true;
+}
+async function heartbeat() {
+  if (!me || document.visibilityState !== "visible") return;
+  await sb.from("user_presence").upsert({ user_id: me, last_seen: nowIso(), visible: showMe });
+}
+async function loadPresence() {
+  const { data } = await sb.from("user_presence").select("user_id,last_seen");
+  pres = {}; if (showMe) (data || []).forEach(r => { if (r.user_id !== me) pres[r.user_id] = r.last_seen; });
+  if (++presTick % 5 === 0) await loadNames();
+  paintFriends(); updateHeadSub();
+}
+function startPresence() {
+  clearInterval(hbTimer); clearInterval(presTimer);
+  loadMyPresence().then(async () => { await heartbeat(); loadPresence(); });
+  hbTimer = setInterval(heartbeat, 60000); presTimer = setInterval(loadPresence, 60000);
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && me) { heartbeat(); loadPresence(); } });
+$("sShow").onchange = async e => {
+  showMe = e.target.checked;
+  await sb.from("user_presence").upsert({ user_id: me, last_seen: nowIso(), visible: showMe });
+  loadPresence();
+};
+
+/* pinned messages */
+const scopeKey = () => dm ? [me, dm].sort().join("_") : channel;
+const viewKey = () => (dm ? "dm:" : "ch:") + scopeKey();
+const pairFilter = uid => "and(sender_id.eq." + me + ",recipient_id.eq." + uid + "),and(sender_id.eq." + uid + ",recipient_id.eq." + me + ")";
+const canPin = () => !!dm || isAdmin;
+function resetPins() { pins = []; $("pinbar").style.display = "none"; }
+const preview = m => m ? (m.text || (m.gif_url ? "GIF" : "📎 " + (m.file_name || "file"))) : "(message no longer available)";
+async function loadPins() {
+  const key = viewKey();
+  const { data } = await sb.from("pins").select("message_id,created_at").eq("kind", dm ? "dm" : "channel").eq("scope", scopeKey()).order("created_at", { ascending: false }).limit(10);
+  if (key !== viewKey()) return;
+  pins = data || []; const bar = $("pinbar");
+  if (!pins.length) { bar.style.display = "none"; return; }
+  const { data: m } = await sb.from(dm ? "direct_messages" : "messages").select("id,text,file_name,gif_url").eq("id", pins[0].message_id).maybeSingle();
+  if (key !== viewKey()) return;
+  bar.textContent = "📌 " + preview(m).slice(0, 90) + (pins.length > 1 ? "   (+" + (pins.length - 1) + " more)" : "");
+  bar.style.display = "flex"; bar.onclick = openPins;
+}
+async function togglePin(m) {
+  const kind = m.recipient_id ? "dm" : "channel";
+  const { error } = pins.some(x => x.message_id === m.id)
+    ? await sb.from("pins").delete().eq("kind", kind).eq("message_id", m.id)
+    : await sb.from("pins").insert({ kind, message_id: m.id });
+  if (error) alert(/too many/.test(error.message) ? "You can pin up to 10 messages here." : "Couldn’t update the pin: " + error.message);
+  loadPins();
+}
+async function openPins() {
+  const box = $("pinList"); box.textContent = "Loading…"; $("pins").style.display = "flex";
+  const ids = pins.map(x => x.message_id);
+  const { data } = ids.length ? await sb.from(dm ? "direct_messages" : "messages").select("*").in("id", ids) : { data: [] };
+  const map = {}; (data || []).forEach(m => { map[m.id] = m; }); box.textContent = "";
+  pins.forEach(x => {
+    const m = map[x.message_id], c = document.createElement("div"); c.className = "c2";
+    const who = m ? (dm ? dn(m.sender_id) : (names[m.user_id] || "Someone")) : "";
+    const sm = document.createElement("small"); sm.textContent = m ? who + " · " + fmtTime(m.created_at) : "";
+    const tx = document.createElement("div"); tx.textContent = preview(m);
+    c.append(sm, tx);
+    if (m) c.appendChild(mkBtn("Go to", () => { $("pins").style.display = "none"; jumpTo(m); }));
+    if (canPin()) c.appendChild(mkBtn("Unpin", () => togglePin({ id: x.message_id, recipient_id: dm ? 1 : null }).then(() => { $("pins").style.display = "none"; }), "x"));
+    box.appendChild(c);
+  });
+}
+$("pinsClose").onclick = () => { $("pins").style.display = "none"; };
+
+/* starred messages */
+async function loadStars() {
+  const { data } = await sb.from("starred").select("kind,message_id");
+  starred = new Set((data || []).map(r => r.kind + ":" + r.message_id));
+}
+async function toggleStar(m) {
+  const kind = m.recipient_id ? "dm" : "channel", key = kind + ":" + m.id;
+  const { error } = starred.has(key)
+    ? await sb.from("starred").delete().eq("kind", kind).eq("message_id", m.id)
+    : await sb.from("starred").insert({ kind, message_id: m.id });
+  if (error) { alert("Couldn’t update the star: " + error.message); return; }
+  if (starred.has(key)) starred.delete(key); else starred.add(key);
+}
+async function openStars() {
+  const box = $("starList"); box.textContent = "Loading…"; $("stars").style.display = "flex";
+  const { data: rows } = await sb.from("starred").select("kind,message_id,created_at").order("created_at", { ascending: false }).limit(60);
+  const list = rows || [], ch = list.filter(r => r.kind === "channel").map(r => r.message_id), dmI = list.filter(r => r.kind === "dm").map(r => r.message_id);
+  const [a, b] = await Promise.all([
+    ch.length ? sb.from("messages").select("*").in("id", ch) : { data: [] },
+    dmI.length ? sb.from("direct_messages").select("*").in("id", dmI) : { data: [] }]);
+  const map = {}; (a.data || []).forEach(m => { map["channel:" + m.id] = m; }); (b.data || []).forEach(m => { map["dm:" + m.id] = m; });
+  box.textContent = "";
+  if (!list.length) { note(box, "Nothing starred yet. Tap ⋯ on a message, then Star."); return; }
+  list.forEach(r => {
+    const m = map[r.kind + ":" + r.message_id], c = document.createElement("div"); c.className = "c2";
+    const other = m && r.kind === "dm" ? (m.sender_id === me ? m.recipient_id : m.sender_id) : null;
+    const sm = document.createElement("small");
+    sm.textContent = m ? (r.kind === "dm" ? "💬 " + dn(other) + " · " + dn(m.sender_id) : "# " + m.channel + " · " + (names[m.user_id] || "Someone")) + " · " + fmtTime(m.created_at) : "";
+    const tx = document.createElement("div"); tx.textContent = preview(m); c.append(sm, tx);
+    if (m) c.appendChild(mkBtn("Open chat", () => { $("stars").style.display = "none"; if (r.kind === "dm") openDM(other, true); else openChannel(m.channel, true); }));
+    c.appendChild(mkBtn("Unstar", async () => { await toggleStar({ id: r.message_id, recipient_id: r.kind === "dm" ? 1 : null }); openStars(); }, "x"));
+    box.appendChild(c);
+  });
+}
+$("starBtn").onclick = () => { $("set").style.display = "none"; openStars(); };
+$("starsClose").onclick = () => { $("stars").style.display = "none"; };
+$("mmPin").onclick = () => { closeMenu(); togglePin(mmCtx); };
+$("mmStar").onclick = () => { closeMenu(); toggleStar(mmCtx); };
+
+/* search inside a chat + jump to a message */
+function flash(mw) {
+  if (!mw) return; mw.scrollIntoView({ block: "center" });
+  mw.style.transition = "background .4s"; mw.style.background = "rgba(108,76,245,.2)"; setTimeout(() => { mw.style.background = ""; }, 1800);
+}
+async function jumpTo(row) {
+  if (els[row.id] && els[row.id].mw) { flash(els[row.id].mw); return; }
+  const t = row.created_at, key = viewKey();
+  const base = () => dm ? sb.from("direct_messages").select("*").or(pairFilter(dm)) : sb.from("messages").select("*").eq("channel", channel);
+  const [a, b] = await Promise.all([
+    base().lte("created_at", t).order("created_at", { ascending: false }).limit(30),
+    base().gt("created_at", t).order("created_at", { ascending: true }).limit(30)]);
+  if (key !== viewKey()) return;
+  const rows = [...(a.data || []).reverse(), ...(b.data || [])];
+  $("msgs").innerHTML = ""; seen = new Set(); ticks = {}; els = {}; rxs = {};
+  rows.forEach(r => add(dm ? { ...r, user_id: r.sender_id } : r));
+  await loadReactions(); flash(els[row.id] && els[row.id].mw);
+}
+let srT = null;
+$("srch").onclick = () => { $("srQ").value = ""; $("srList").textContent = ""; $("sr").style.display = "flex"; $("srQ").focus(); };
+$("srClose").onclick = () => { $("sr").style.display = "none"; };
+$("srQ").oninput = () => { clearTimeout(srT); srT = setTimeout(runSearch, 350); };
+async function runSearch() {
+  const q = $("srQ").value.trim().replace(/[%_,()\\]/g, ""), box = $("srList");
+  if (q.length < 2) { box.textContent = ""; return; }
+  const key = viewKey();
+  const base = dm ? sb.from("direct_messages").select("*").or(pairFilter(dm)) : sb.from("messages").select("*").eq("channel", channel);
+  const { data, error } = await base.ilike("text", "%" + q + "%").order("created_at", { ascending: false }).limit(30);
+  if (key !== viewKey()) return;
+  box.textContent = "";
+  if (error || !data.length) { note(box, error ? "Search failed." : "No messages found."); return; }
+  data.forEach(m => {
+    const c = document.createElement("div"); c.className = "c2"; c.style.cursor = "pointer";
+    const sm = document.createElement("small"); sm.textContent = (dm ? dn(m.sender_id) : (names[m.user_id] || "Someone")) + " · " + fmtTime(m.created_at);
+    const tx = document.createElement("div"); tx.textContent = m.text; c.append(sm, tx);
+    c.onclick = () => { $("sr").style.display = "none"; jumpTo(m); }; box.appendChild(c);
+  });
 }
 
 $("send").onclick = send;
