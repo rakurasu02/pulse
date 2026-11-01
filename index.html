@@ -72,6 +72,20 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;overflow-y:auto;max-height:50vh}
 .egrid button{border:0;background:none;font-size:24px;cursor:pointer;border-radius:8px;padding:4px}.egrid button:hover{background:var(--their)}
 .av{position:relative}
+.pane{display:flex;flex-direction:column;gap:4px}
+.mecard{text-align:center;padding:14px 10px;border:1px solid var(--line);border-radius:16px;background:var(--bg);margin-bottom:8px}
+#tabs{display:flex;flex:none;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+#tabs button{flex:1;position:relative;border:0;background:none;color:var(--muted);padding:8px 4px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:11px}
+#tabs .ti{font-size:22px;line-height:1}
+#tabs button.on{color:var(--accent);font-weight:600}
+#tabs .nb{display:none;position:absolute;top:3px;left:calc(50% + 6px);background:#e5484d;color:#fff;border-radius:9px;min-width:18px;height:18px;padding:0 5px;font-size:11px;font-style:normal;font-weight:600;line-height:18px;text-align:center}
+@media (min-width:641px){
+ #tabs{order:-1;flex-direction:column;width:76px;border-top:0;border-right:1px solid var(--line);padding:14px 0;gap:6px}
+ #tabs button{flex:none;padding:10px 4px;border-radius:12px;margin:0 8px}
+ #tabs button.on{background:var(--their)}
+ #tabs .nb{left:calc(50% + 4px);top:2px}
+}
+@media (max-width:640px){ body.chat-open #tabs{display:none} }
 .dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#2fbf71;border:2px solid var(--panel);font-style:normal}
 .ht{display:flex;flex-direction:column;line-height:1.2;min-width:0}
 #hsub{font-size:12px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -167,17 +181,36 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 
 <div id="app">
   <nav id="side"><h2>Pulse ✦ <button id="gear2" title="Settings">⚙️</button></h2>
-    <input id="find" placeholder="Search people…" autocomplete="off"><div id="results"></div>
-    <div class="sec">Channels</div>
-    <div id="chans">
-      <button class="room" data-c="general">general<span class="bdg" id="bdg-general"></span></button>
-      <button class="room" data-c="random">random<span class="bdg" id="bdg-random"></span></button>
-      <button class="room" data-c="ideas">ideas<span class="bdg" id="bdg-ideas"></span></button>
+    <div class="pane" id="paneChats">
+      <input id="find" placeholder="Search people…" autocomplete="off"><div id="results"></div>
+      <div class="sec">Channels</div>
+      <div id="chans">
+        <button class="room" data-c="general">general<span class="bdg" id="bdg-general"></span></button>
+        <button class="room" data-c="random">random<span class="bdg" id="bdg-random"></span></button>
+        <button class="room" data-c="ideas">ideas<span class="bdg" id="bdg-ideas"></span></button>
+      </div>
+      <div class="sec">Chats</div><div id="friends"><div class="sub">No chats yet</div></div>
     </div>
-    <div class="sec" id="reqSec" style="display:none">Friend requests</div><div id="reqs"></div>
-    <div class="sec" id="mrSec" style="display:none">Message requests</div><div id="mreqs"></div>
-    <div class="sec">Chats</div><div id="friends"><div class="sub">No chats yet</div></div>
-    <div id="me"></div><button class="link" id="out">Log out</button>
+    <div class="pane" id="paneReq" style="display:none">
+      <div class="sec" id="reqSec" style="display:none">Friend requests</div><div id="reqs"></div>
+      <div class="sec" id="mrSec" style="display:none">Message requests</div><div id="mreqs"></div>
+      <div class="sub" id="reqEmpty" style="padding:24px 8px;text-align:center">No requests right now.<br>New friend requests and message requests will show up here.</div>
+    </div>
+    <div class="pane" id="paneMe" style="display:none">
+      <div class="mecard">
+        <span class="av" id="meAv" style="width:88px;height:88px;font-size:34px;margin:0 auto 8px"></span>
+        <h3 id="meName" style="margin:4px 0"></h3>
+        <div class="sub" id="meUser"></div>
+        <div id="meStatus" style="margin-top:4px"></div>
+        <div class="sub" id="meBio" style="white-space:pre-wrap"></div>
+        <button class="bt pri wide" id="meEdit">✏️ Edit profile</button>
+      </div>
+      <button class="bt wide" id="meSettings">⚙️ Settings</button>
+      <button class="bt wide" id="meStars">⭐ Starred messages</button>
+      <a class="bt wide" id="meAdmin" href="admin.html" style="display:none;text-align:center;text-decoration:none">🛠 Admin panel</a>
+      <div class="sub lk" style="text-align:center;margin-top:10px"><a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></div>
+      <div id="me" style="text-align:center"></div><button class="link" id="out" style="display:block;margin:0 auto">Log out</button>
+    </div>
   </nav>
   <section id="main">
     <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
@@ -192,6 +225,11 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
       <button class="btn" id="send">Send</button>
     </div>
   </section>
+  <nav id="tabs">
+    <button data-t="chats" class="on"><span class="ti">💬</span><span>Chats</span><i class="nb" id="nb-chats"></i></button>
+    <button data-t="req"><span class="ti">👥</span><span>Requests</span><i class="nb" id="nb-req"></i></button>
+    <button data-t="me"><span class="ti">👤</span><span>Me</span></button>
+  </nav>
 </div>
 
 <div id="set"><div class="box"><h3>Settings <button id="sx" title="Close">✕</button></h3>
@@ -376,6 +414,7 @@ async function loadNames() {
   let { data, error } = await sb.from("profiles").select("id,username,bio,status,avatar_path");
   if (error) ({ data } = await sb.from("profiles").select("id,username"));
   (data || []).forEach(p => { names[p.id] = p.username; prof[p.id] = p; });
+  paintMe();
   $("me").textContent = "Signed in as " + (names[me] || "you");
 }
 
@@ -576,6 +615,7 @@ function paintFriends() {
   const inMsg = mr.filter(r => r.status === "pending" && r.recipient_id === me);
   const mq = $("mreqs"); mq.innerHTML = "";
   $("mrSec").style.display = inMsg.length ? "block" : "none";
+  setNb("req", incoming.length + inMsg.length); $("reqEmpty").style.display = (incoming.length + inMsg.length) ? "none" : "block";
   inMsg.forEach(r => {
     const id = r.sender_id;
     const row = mkRowU(id, (unread.has(id) ? "● " : "") + (dn(id)),
@@ -820,7 +860,7 @@ $("delGo").onclick = async () => {
 /* ---- admin link (only shown to admins) ---- */
 async function checkAdmin() {
   const { data } = await sb.rpc("is_admin");
-  isAdmin = data === true;
+  isAdmin = data === true; $("meAdmin").style.display = data === true ? "block" : "none";
   $("adminLink").style.display = data === true ? "block" : "none";
 }
 
@@ -1175,6 +1215,7 @@ function paintBadges() {
   });
   Object.entries(unreadDM).forEach(([id, n]) => { if (n && !S.muted.includes("dm:" + id)) total += n; });
   document.title = (total ? "(" + total + ") " : "") + "Pulse Messenger";
+  setNb("chats", total);
 }
 function markChanRead(c) {
   unreadCh[c] = 0; paintBadges();
@@ -1237,7 +1278,7 @@ function fillProfileForm() {
   const p = prof[me] || {}, a = $("myAv");
   a.textContent = (Array.from(names[me] || "?")[0] || "?").toUpperCase(); a.style.backgroundImage = "";
   if (p.avatar_path) { a.textContent = ""; a.style.backgroundImage = 'url("' + encodeURI(avUrl(p.avatar_path)) + '")'; a.style.backgroundSize = "cover"; a.style.backgroundPosition = "center"; }
-  $("bioTxt").value = p.bio || ""; $("stTxt").value = p.status || ""; $("sShow").checked = showMe;
+  $("bioTxt").value = p.bio || ""; $("stTxt").value = p.status || ""; $("sShow").checked = showMe; paintMe();
 }
 $("profSave").onclick = async () => {
   const bio = $("bioTxt").value.trim().slice(0, 150) || null, status = $("stTxt").value.trim().slice(0, 40) || null;
@@ -1417,6 +1458,26 @@ async function runSearch() {
     c.onclick = () => { $("sr").style.display = "none"; jumpTo(m); }; box.appendChild(c);
   });
 }
+
+/* ---- tab bar: Chats / Requests / Me ---- */
+function setNb(k, n) { const b = $("nb-" + k); if (!b) return; b.style.display = n ? "block" : "none"; b.textContent = n > 99 ? "99+" : n; }
+function showTab(t) {
+  ["Chats", "Req", "Me"].forEach(k => { $("pane" + k).style.display = k.toLowerCase() === t ? "" : "none"; });
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  if (t === "me") paintMe();
+  $("side").scrollTop = 0;
+}
+document.querySelectorAll("#tabs button").forEach(b => { b.onclick = () => showTab(b.dataset.t); });
+function paintMe() {
+  const p = prof[me] || {}, a = $("meAv"); if (!a) return;
+  a.textContent = (Array.from(names[me] || "?")[0] || "?").toUpperCase(); a.style.backgroundImage = "";
+  if (p.avatar_path) { a.textContent = ""; a.style.backgroundImage = 'url("' + encodeURI(avUrl(p.avatar_path)) + '")'; a.style.backgroundSize = "cover"; a.style.backgroundPosition = "center"; }
+  $("meName").textContent = myFull || names[me] || "You"; $("meUser").textContent = "@" + (names[me] || "");
+  $("meStatus").textContent = p.status ? "● " + p.status : ""; $("meBio").textContent = p.bio || "";
+}
+$("meEdit").onclick = () => { $("gear").onclick(); $("bioTxt").scrollIntoView({ block: "center" }); };
+$("meSettings").onclick = () => $("gear").onclick();
+$("meStars").onclick = openStars;
 
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
