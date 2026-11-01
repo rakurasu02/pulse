@@ -58,6 +58,19 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .pw{position:relative}.pw input{width:100%;padding-right:64px}
 .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--accent);cursor:pointer;font-size:13px;padding:4px}
 #legal{font-size:12px;color:var(--muted);text-align:center}#legal a,.lk a{color:var(--accent)}
+.bdg{display:none;margin-left:auto;background:var(--accent);color:#fff;border-radius:10px;min-width:20px;padding:0 6px;text-align:center;font-size:12px;line-height:20px;font-style:normal;font-weight:600}
+.bdg.mut{background:var(--muted)}
+#tools{display:none;gap:8px;padding:8px 14px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.tb{border:0;border-radius:18px;padding:8px 14px;background:var(--their);color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+.tb.rec{background:#d33;color:#fff}
+#plus{border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:22px;cursor:pointer}
+.lp{display:none;margin-top:6px;border:1px solid rgba(127,127,127,.4);border-radius:10px;overflow:hidden;color:inherit;text-decoration:none;max-width:280px;background:rgba(127,127,127,.12)}
+.lp img{width:100%;max-height:150px;object-fit:cover;display:block}.lp div{padding:6px 8px;font-size:13px}.lp b{display:block}.lp small{opacity:.7}
+.gifimg{display:block;max-width:240px;width:100%;border-radius:12px;margin-top:4px;cursor:pointer}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;overflow-y:auto;max-height:50vh}
+.grid2 img{width:100%;height:90px;object-fit:cover;border-radius:8px;cursor:pointer}
+.egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;overflow-y:auto;max-height:50vh}
+.egrid button{border:0;background:none;font-size:24px;cursor:pointer;border-radius:8px;padding:4px}.egrid button:hover{background:var(--their)}
 .fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
 .rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .rq b{display:block;font-size:12px}
@@ -148,9 +161,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <input id="find" placeholder="Search people…" autocomplete="off"><div id="results"></div>
     <div class="sec">Channels</div>
     <div id="chans">
-      <button class="room" data-c="general">general</button>
-      <button class="room" data-c="random">random</button>
-      <button class="room" data-c="ideas">ideas</button>
+      <button class="room" data-c="general">general<span class="bdg" id="bdg-general"></span></button>
+      <button class="room" data-c="random">random<span class="bdg" id="bdg-random"></span></button>
+      <button class="room" data-c="ideas">ideas<span class="bdg" id="bdg-ideas"></span></button>
     </div>
     <div class="sec" id="reqSec" style="display:none">Friend requests</div><div id="reqs"></div>
     <div class="sec" id="mrSec" style="display:none">Message requests</div><div id="mreqs"></div>
@@ -162,8 +175,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="typing"></div>
     <div id="dmbar"></div>
     <div id="replybar"></div>
+    <div id="tools"><button class="tb" id="attach">📎 File</button><button class="tb" id="voice">🎤 Voice note</button><button class="tb" id="vcancel" style="display:none">✕ Cancel</button><button class="tb" id="emoBtn">🙂 Emoji</button><button class="tb" id="gifBtn">GIF</button></div>
     <div id="bar">
-      <button id="attach" title="Send image or file" style="border:0;border-radius:50%;width:42px;height:42px;flex:none;background:var(--their);color:var(--text);font-size:18px;cursor:pointer">📎</button><input type="file" id="file" hidden>
+      <button id="plus" title="More: file, voice note, emoji, GIF">＋</button><input type="file" id="file" hidden>
       <select id="mood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select>
       <input id="txt" placeholder="Write a message…" maxlength="1000" autocomplete="off">
       <button class="btn" id="send">Send</button>
@@ -176,6 +190,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sSize">Text size</label><select id="sSize"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
   <div class="srow"><label for="sEnter">Press Enter to send</label><input type="checkbox" id="sEnter"></div>
   <div class="srow"><label for="sSound">Sound for new messages</label><input type="checkbox" id="sSound"></div>
+  <div class="srow"><label for="sDnd">Do not disturb</label><select id="sDnd"><option value="keep">Choose…</option><option value="off">Off</option><option value="1">For 1 hour</option><option value="8">For 8 hours</option><option value="inf">Until I turn it off</option></select></div>
+  <div class="sub" id="sDndNote"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
   <div class="sec">Blocked people</div><div id="sBlocked"></div>
   <div class="sub lk"><a href="terms.html" target="_blank" rel="noopener">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a id="contactLink" href="#" target="_blank" rel="noopener">Contact</a></div>
@@ -185,7 +201,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 </div></div>
 
 <div class="ov" id="sheet"><div class="bx"><h3 id="shName"></h3>
-  <button class="bt" id="shNick">✏️ Nickname</button><button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
+  <button class="bt" id="shMute">🔕 Mute</button><button class="bt" id="shNick">✏️ Nickname</button><button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
 <div class="ov" id="nick"><div class="bx"><h3>Nickname</h3><div class="sub" id="nkReal" style="padding:0"></div>
   <input type="text" id="nkTxt" maxlength="30" placeholder="Nickname" autocomplete="off">
   <div class="sub" style="padding:0">Only you can see this nickname.</div>
@@ -206,6 +222,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <button class="bt" id="mmClose">Close</button></div></div>
 <div class="ov" id="fw"><div class="bx"><h3>Forward to…</h3>
   <div id="fwList" style="display:flex;flex-direction:column;gap:6px"></div><button class="bt" id="fwCancel">Cancel</button></div></div>
+<div class="ov" id="emo"><div class="bx"><h3>Emoji</h3><div class="egrid" id="egrid"></div><button class="bt" id="emoClose">Close</button></div></div>
+<div class="ov" id="gif"><div class="bx"><h3>GIFs</h3><input type="text" id="gifQ" placeholder="Search GIFs…" autocomplete="off">
+  <div class="grid2" id="gifGrid"></div><div class="sub" style="padding:0">Powered by GIPHY</div><button class="bt" id="gifClose">Close</button></div></div>
 <div class="ov" id="rep"><div class="bx"><h3>Report <span id="repWho"></span></h3>
   <select id="repReason"><option value="spam">Spam</option><option value="harassment">Harassment or bullying</option><option value="inappropriate">Inappropriate content</option><option value="scam">Scam or fraud</option><option value="other">Something else</option></select>
   <textarea id="repDetails" rows="3" maxlength="500" placeholder="Add details (optional)"></textarea>
@@ -228,21 +247,21 @@ const $ = id => document.getElementById(id);
 let signup = false, me = null, channel = "general", sub = null, names = {}, seen = new Set();
 
 /* ---- settings ---- */
-let S = { theme: "auto", size: "m", enter: true, sound: true, mood: "😊" };
+let S = { theme: "auto", size: "m", enter: true, sound: true, mood: "😊", muted: [], dndUntil: null };
 function applyS() {
   const r = document.documentElement;
   if (S.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", S.theme);
   document.body.style.fontSize = { s: "14px", m: "16px", l: "19px" }[S.size] || "16px";
   $("sTheme").value = S.theme; $("sSize").value = S.size; $("sEnter").checked = !!S.enter;
-  $("sSound").checked = !!S.sound; $("sMood").value = S.mood; $("mood").value = S.mood;
+  $("sSound").checked = !!S.sound; paintDnd(); $("sMood").value = S.mood; $("mood").value = S.mood;
 }
 async function loadSettings() {
   const { data } = await sb.from("settings").select("*").eq("user_id", me).maybeSingle();
-  if (data) S = { theme: data.theme, size: data.text_size, enter: data.enter_to_send, sound: data.sound, mood: data.mood };
+  if (data) S = { theme: data.theme, size: data.text_size, enter: data.enter_to_send, sound: data.sound, mood: data.mood, muted: data.muted || [], dndUntil: data.dnd_until || null };
   applyS();
 }
 async function saveS() {
-  const { error } = await sb.from("settings").upsert({ user_id: me, theme: S.theme, text_size: S.size, enter_to_send: S.enter, sound: S.sound, mood: S.mood });
+  const { error } = await sb.from("settings").upsert({ user_id: me, theme: S.theme, text_size: S.size, enter_to_send: S.enter, sound: S.sound, mood: S.mood, muted: S.muted, dnd_until: S.dndUntil });
   if (error) alert("Couldn’t save settings: " + error.message);
 }
 function beep() {
@@ -336,6 +355,7 @@ async function loadNames() {
 async function start() {
   await loadNames();
   Promise.all([loadBlocks(), loadNicks(), loadPrivate()]).then(loadFriends);
+  loadUnread();
   checkAdmin();
   loadSettings();
   subscribeDM();
@@ -350,7 +370,8 @@ async function start() {
 
 async function openChannel(c, user) {
   if (user) showChat();
-  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); paintFriends(); updateBar();
+  if (!dm && channel) markChanRead(channel);
+  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); paintFriends(); updateBar(); markChanRead(c);
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -359,7 +380,7 @@ async function openChannel(c, user) {
   loadReactions();
   sub = sb.channel("room-" + c).on("postgres_changes",
     { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
-    async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && S.sound) beep(); add(p.new); }).subscribe();
+    async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && shouldBeep("ch:" + c)) beep(); add(p.new); }).subscribe();
 }
 
 function paintTick(el, m) {
@@ -382,7 +403,7 @@ function add(m) {
   const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
   const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : (m.recipient_id ? dn(m.user_id) : (names[m.user_id] || "Someone"));
-  const t = document.createElement("div"); t.textContent = (m.mood || "") + " " + m.text; if (!m.text) t.style.display = "none";
+  const t = document.createElement("div"); linkify(t, m.mood, m.text); if (!m.text) t.style.display = "none";
   const pre = [];
   if (m.forwarded) { const f = document.createElement("div"); f.className = "fwd"; f.textContent = "↪ Forwarded"; pre.push(f); }
   if (m.reply_to && m.reply_preview) {
@@ -396,6 +417,12 @@ function add(m) {
   }
   d.append(w, ...pre, t);
   if (m.file_path) d.appendChild(fileEl(m, () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }));
+  if (m.gif_url && /^https:\/\/media[0-9]*\.giphy\.com\//.test(m.gif_url)) {
+    const g = document.createElement("img"); g.className = "gifimg"; g.src = m.gif_url; g.alt = "GIF"; g.loading = "lazy"; g.referrerPolicy = "no-referrer";
+    g.onload = () => { if (near || m.user_id === me) box.scrollTop = box.scrollHeight; }; g.onclick = () => window.open(m.gif_url, "_blank", "noopener");
+    d.appendChild(g);
+  }
+  const u1 = firstUrl(m.text); if (u1) d.appendChild(previewEl(u1));
   const mw = document.createElement("div"); mw.className = "mw" + (m.user_id === me ? " me" : "");
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
   const ed = document.createElement("span"); ed.textContent = m.edited_at ? " · edited" : ""; tm.appendChild(ed);
@@ -420,7 +447,7 @@ async function send() {
   if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
 }
 /* ---- friends, requests & search ---- */
-let fs = [], mr = [], els = {}, rxs = {}, replyTo = null, typeCh = {}, typeSub = null, typeTimer = null, typeLast = 0, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
+let fs = [], mr = [], unreadCh = {}, unreadDM = {}, mcTimer = null, els = {}, rxs = {}, replyTo = null, typeCh = {}, typeSub = null, typeTimer = null, typeLast = 0, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
 const other = r => r.requester_id === me ? r.addressee_id : r.requester_id;
 const relOf = id => fs.find(r => other(r) === id);
 
@@ -457,6 +484,7 @@ async function markIncoming(uid) {
   const t = nowIso();
   await sb.from("direct_messages").update({ delivered_at: t }).eq("recipient_id", me).eq("sender_id", uid).is("delivered_at", null);
   await sb.from("direct_messages").update({ seen_at: t }).eq("recipient_id", me).eq("sender_id", uid).is("seen_at", null);
+  unreadDM[uid] = 0; unread.delete(uid); paintFriends(); paintBadges();
 }
 async function subscribeReceipts() {
   if (dmUpSub) await sb.removeChannel(dmUpSub);
@@ -490,7 +518,7 @@ async function ensureConn(uid) {
 }
 function updateBar() {
   const bar = $("dmbar"), comp = $("bar");
-  $("more").style.display = dm ? "block" : "none";
+  $("more").style.display = "block";
   if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
   const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
   const nm = dn(dm);
@@ -533,15 +561,18 @@ function paintFriends() {
   });
   if (!rows.length) { note(box, "No chats yet. Search for someone to message or add."); return; }
   rows.forEach(({ id, fr, pend }) => {
-    const row = mkRow((unread.has(id) ? "● " : "") + (dn(id)) + (pend ? " · request sent" : ""),
+    const row = mkRow((dn(id)) + (pend ? " · request sent" : "") + (S.muted.includes("dm:" + id) ? " 🔕" : ""),
       fr ? [mkBtn("Remove", () => drop(fr), "x")] : [], () => openDM(id, true));
-    if (dm === id || unread.has(id)) row.children[1].style.fontWeight = "700";
+    const n = unreadDM[id] || (unread.has(id) ? 1 : 0);
+    if (dm === id || n) row.children[1].style.fontWeight = "700";
+    if (n) { const b = document.createElement("span"); b.className = "bdg" + (S.muted.includes("dm:" + id) ? " mut" : ""); b.style.display = "inline-block"; b.textContent = n > 99 ? "99+" : n; row.children[1].after(b); }
     box.appendChild(row);
   });
 }
 
 async function openDM(uid, user) {
   if (user) showChat();
+  if (!dm && channel) markChanRead(channel);
   dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping();
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false); $("msgs").innerHTML = "";
@@ -566,8 +597,8 @@ async function subscribeDM() {
       if (blocked.has(m.sender_id)) return;
       if (!names[m.sender_id]) await loadNames();
       if (connOf(m.sender_id) === "none") await loadFriends();
-      if (dm === m.sender_id) { add({ ...m, user_id: m.sender_id }); hideTyping(); } else unread.add(m.sender_id);
-      if (S.sound) beep();
+      if (dm === m.sender_id) { add({ ...m, user_id: m.sender_id }); hideTyping(); } else { unread.add(m.sender_id); unreadDM[m.sender_id] = (unreadDM[m.sender_id] || 0) + 1; paintBadges(); }
+      if (shouldBeep("dm:" + m.sender_id)) beep();
       paintFriends();
       markAllDelivered();
       if (dm === m.sender_id) markIncoming(m.sender_id);
@@ -653,26 +684,25 @@ function fileBtn(m, icon) {
   }
 }
 $("attach").onclick = () => $("file").click();
-$("file").onchange = async e => {
-  const f = e.target.files[0]; e.target.value = "";
-  if (!f) return;
+$("file").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) sendFile(f, f.name, f.type); };
+async function sendFile(f, name, type) {
   if (f.size > 50 * 1024 * 1024) { alert("Files must be under 50 MB (" + fmtSize(f.size) + " is too big)."); return; }
   if (dm && !(await ensureConn(dm))) return;
-  const target = dm, btn = $("attach"); btn.disabled = true; btn.textContent = "⏳";
+  const target = dm, btn = $("attach"); btn.disabled = true; btn.textContent = "⏳ Sending…";
   try {
-    const safe = f.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+    const safe = name.replace(/[^\w.\-]+/g, "_").slice(-80);
     const path = me + "/" + crypto.randomUUID() + "-" + safe;
-    const up = await sb.storage.from("attachments").upload(path, f, { contentType: f.type || "application/octet-stream" });
+    const up = await sb.storage.from("attachments").upload(path, f, { contentType: type || "application/octet-stream" });
     if (up.error) throw up.error;
-    const row = { text: "", mood: $("mood").value, file_path: path, file_name: f.name.slice(0, 120), file_type: f.type || "", file_size: f.size };
+    const row = { text: "", mood: $("mood").value, file_path: path, file_name: name.slice(0, 120), file_type: type || "", file_size: f.size };
     const { data, error } = target
       ? await sb.from("direct_messages").insert({ ...row, recipient_id: target }).select().single()
       : await sb.from("messages").insert({ ...row, channel }).select().single();
     if (error) throw error;
     if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
-  } catch (err) { alert("Couldn’t send file: " + (err.message || err)); }
-  btn.disabled = false; btn.textContent = "📎";
-};
+  } catch (err) { alert("Couldn’t send the file: " + (err.message || err)); }
+  btn.disabled = false; btn.textContent = "📎 File";
+}
 
 /* ---- block, report, delete account ---- */
 async function loadBlocks() {
@@ -717,11 +747,22 @@ $("repSend").onclick = async () => {
   if ($("repBlock").checked) await blockUser(repCtx.userId, true);
   alert("Thank you. Your report was sent.");
 };
-$("more").onclick = () => { $("shName").textContent = dn(dm); $("sheet").style.display = "flex"; };
+$("more").onclick = () => {
+  const ch = !dm;
+  $("shName").textContent = ch ? "# " + channel : dn(dm);
+  ["shNick", "shBlock", "shReport"].forEach(id => { $(id).style.display = ch ? "none" : "block"; });
+  $("shMute").textContent = S.muted.includes(ch ? "ch:" + channel : "dm:" + dm) ? "🔔 Unmute" : "🔕 Mute";
+  $("sheet").style.display = "flex";
+};
+$("shMute").onclick = () => {
+  const key = dm ? "dm:" + dm : "ch:" + channel;
+  S.muted = S.muted.includes(key) ? S.muted.filter(k => k !== key) : [...S.muted, key].slice(-200);
+  $("sheet").style.display = "none"; saveS(); paintBadges(); paintFriends();
+};
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del", "nick", "edit", "mm", "fw"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick", "edit", "mm", "fw", "emo", "gif"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -816,7 +857,7 @@ $("edSave").onclick = async () => {
 function applyEdit(row) {
   const e = els[row.id]; if (!e) return;
   e.m.text = row.text; e.m.edited_at = row.edited_at;
-  e.t.textContent = (row.mood || e.m.mood || "") + " " + row.text; e.t.style.display = row.text ? "" : "none";
+  linkify(e.t, row.mood || e.m.mood || "", row.text); e.t.style.display = row.text ? "" : "none";
   e.ed.textContent = row.edited_at ? " · edited" : "";
 }
 function removeEl(id) { const e = els[id]; if (e && e.mw) { e.mw.remove(); delete els[id]; } }
@@ -831,6 +872,12 @@ let editSub = null;
 async function subscribeEdits() {
   if (editSub) await sb.removeChannel(editSub);
   editSub = sb.channel("edits")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, p => {
+      const m = p.new; if (m.user_id === me || blocked.has(m.user_id)) return;
+      if (!dm && channel === m.channel) { markChanReadSoon(); return; }
+      unreadCh[m.channel] = (unreadCh[m.channel] || 0) + 1; paintBadges();
+      if (shouldBeep("ch:" + m.channel)) beep();
+    })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, p => { if (!dm) applyEdit(p.new); })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, p => { if (!dm) removeEl(p.old.id); })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: "recipient_id=eq." + me }, p => { if (dm) applyEdit({ ...p.new }); })
@@ -948,7 +995,7 @@ async function forwardTo(m, dest) {
     if (error) { alert("Couldn’t copy the file: " + error.message); return; }
     file = { file_path: np, file_name: m.file_name, file_type: m.file_type, file_size: m.file_size };
   }
-  const row = { text: m.text || "", mood: m.mood || "😊", forwarded: true, ...file };
+  const row = { text: m.text || "", mood: m.mood || "😊", forwarded: true, gif_url: m.gif_url || null, ...file };
   const { data, error } = dest.type === "dm"
     ? await sb.from("direct_messages").insert({ ...row, recipient_id: dest.id }).select().single()
     : await sb.from("messages").insert({ ...row, channel: dest.id }).select().single();
@@ -956,6 +1003,157 @@ async function forwardTo(m, dest) {
   if (dest.type === "dm" && dm === dest.id) add({ ...data, user_id: data.sender_id });
   else if (dest.type === "ch" && !dm && channel === dest.id) add(data);
   alert("Message forwarded.");
+}
+
+/* ---- tools tray ---- */
+const closeTools = () => { $("tools").style.display = "none"; };
+$("plus").onclick = () => { $("tools").style.display = $("tools").style.display === "flex" ? "none" : "flex"; };
+$("attach").onclick = () => { closeTools(); $("file").click(); };
+
+/* ---- emoji picker ---- */
+"😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 😉 😍 🥰 😘 😋 😛 😜 🤪 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 😶 😐 😑 😬 🙄 😯 😮 😲 🥱 😴 🤤 😪 🤐 🥴 🤢 🤮 😷 🤒 👍 👎 👌 🤞 🤟 👋 🙏 👏 🙌 💪 🧡 💛 💚 💙 💜 🖤 💔 💕 💖 🔥 ✨ 🎉 🎂 🎁 🌹 🌙 ⭐ 💯 ✅ ❌".split(" ").forEach(e => {
+  const b = document.createElement("button"); b.textContent = e;
+  b.onclick = () => {
+    const i = $("txt"), a = i.selectionStart ?? i.value.length, z = i.selectionEnd ?? a;
+    i.value = i.value.slice(0, a) + e + i.value.slice(z); i.focus(); i.selectionStart = i.selectionEnd = a + e.length;
+    i.dispatchEvent(new Event("input"));
+  };
+  $("egrid").appendChild(b);
+});
+$("emoBtn").onclick = () => { closeTools(); $("emo").style.display = "flex"; };
+$("emoClose").onclick = () => { $("emo").style.display = "none"; };
+
+/* ---- GIFs (GIPHY) ---- */
+const GIPHY = window.GIPHY_KEY || "";
+if (!GIPHY) $("gifBtn").style.display = "none";
+async function loadGifs(q) {
+  const grid = $("gifGrid"); grid.textContent = "Loading…";
+  try {
+    const url = "https://api.giphy.com/v1/gifs/" + (q ? "search" : "trending") + "?api_key=" + encodeURIComponent(GIPHY) + "&limit=24&rating=pg" + (q ? "&q=" + encodeURIComponent(q) : "");
+    const j = await (await fetch(url)).json(); grid.textContent = "";
+    (j.data || []).forEach(g => {
+      const im = document.createElement("img"); im.src = g.images.fixed_height_small.url; im.alt = g.title || "GIF"; im.loading = "lazy"; im.referrerPolicy = "no-referrer";
+      im.onclick = () => sendGif(g.images.fixed_height.url); grid.appendChild(im);
+    });
+    if (!grid.children.length) grid.textContent = "No GIFs found.";
+  } catch (e) { grid.textContent = "Couldn’t load GIFs."; }
+}
+let gifT = null;
+$("gifQ").oninput = () => { clearTimeout(gifT); gifT = setTimeout(() => loadGifs($("gifQ").value.trim()), 400); };
+$("gifBtn").onclick = () => { closeTools(); $("gifQ").value = ""; $("gif").style.display = "flex"; loadGifs(""); };
+$("gifClose").onclick = () => { $("gif").style.display = "none"; };
+async function sendGif(url) {
+  $("gif").style.display = "none";
+  if (dm && !(await ensureConn(dm))) return;
+  const target = dm, row = { text: "", mood: $("mood").value, gif_url: url };
+  const { data, error } = target
+    ? await sb.from("direct_messages").insert({ ...row, recipient_id: target }).select().single()
+    : await sb.from("messages").insert({ ...row, channel }).select().single();
+  if (error) { alert("Couldn’t send the GIF: " + error.message); return; }
+  if (dm === target) add(target ? { ...data, user_id: data.sender_id } : data);
+}
+
+/* ---- voice notes ---- */
+let rec = null, recChunks = [], recTimer = null, recStart = 0, recCancel = false;
+function voiceReset() { clearInterval(recTimer); $("voice").classList.remove("rec"); $("voice").textContent = "🎤 Voice note"; $("vcancel").style.display = "none"; }
+$("voice").onclick = async () => {
+  if (rec) { rec.stop(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { alert("Voice notes aren’t supported in this browser."); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { alert("Couldn’t access your microphone. Check your browser permissions."); return; }
+  const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+  recChunks = []; recCancel = false;
+  rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  rec.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); voiceReset();
+    const type = ((rec && rec.mimeType) || mime || "audio/webm").split(";")[0]; rec = null; closeTools();
+    if (recCancel || !recChunks.length) return;
+    const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+    await sendFile(new Blob(recChunks, { type }), "voice-note." + ext, type);
+  };
+  rec.start(); recStart = Date.now(); $("voice").classList.add("rec"); $("vcancel").style.display = "inline-block";
+  const tick = () => {
+    const sec = Math.floor((Date.now() - recStart) / 1000);
+    $("voice").textContent = "⏹ Send (" + Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0") + ")";
+    if (sec >= 120 && rec) rec.stop();
+  };
+  tick(); recTimer = setInterval(tick, 500);
+};
+$("vcancel").onclick = () => { recCancel = true; if (rec) rec.stop(); };
+
+/* ---- links & previews ---- */
+const URL_RE = /https?:\/\/[^\s<>"']+/g;
+const cleanUrl = u => u.replace(/[.,!?;:)\]]+$/, "");
+const firstUrl = text => { const m = (text || "").match(URL_RE); return m ? cleanUrl(m[0]) : null; };
+function linkify(el, mood, text) {
+  el.textContent = ""; text = text || "";
+  el.append(mood ? mood + " " : "");
+  let last = 0;
+  for (const m of text.matchAll(URL_RE)) {
+    const u = cleanUrl(m[0]); el.append(text.slice(last, m.index));
+    const a = document.createElement("a"); a.href = u; a.textContent = u; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.style.cssText = "color:inherit;text-decoration:underline"; el.appendChild(a); last = m.index + u.length;
+  }
+  el.append(text.slice(last));
+}
+const previews = {};
+function getPreview(url) {
+  if (!previews[url]) previews[url] = sb.functions.invoke("link-preview", { body: { url } }).then(r => (r.error ? null : r.data)).catch(() => null);
+  return previews[url];
+}
+function previewEl(url) {
+  const a = document.createElement("a"); a.className = "lp"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  getPreview(url).then(p => {
+    if (!p || !(p.title || p.image)) return;
+    if (p.image && p.image.startsWith("https://")) { const im = document.createElement("img"); im.src = p.image; im.alt = ""; im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.onerror = () => im.remove(); a.appendChild(im); }
+    const box = document.createElement("div"), t = document.createElement("b"), s2 = document.createElement("small");
+    t.textContent = p.title || p.site || url; s2.textContent = p.site || ""; box.append(t, s2); a.appendChild(box); a.style.display = "block";
+    const m = $("msgs"); if (m.scrollHeight - m.scrollTop - m.clientHeight < 260) m.scrollTop = m.scrollHeight;
+  });
+  return a;
+}
+
+/* ---- unread counts, mute, do not disturb ---- */
+const dndOn = () => !!S.dndUntil && new Date(S.dndUntil) > new Date();
+const shouldBeep = key => S.sound && !dndOn() && !S.muted.includes(key);
+function paintDnd() {
+  $("sDnd").value = "keep";
+  $("sDndNote").textContent = dndOn()
+    ? "Do not disturb is on" + (new Date(S.dndUntil) - Date.now() > 3.15e10 ? "." : " until " + new Date(S.dndUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + ".") : "";
+}
+$("sDnd").onchange = e => {
+  const v = e.target.value; if (v === "keep") return;
+  S.dndUntil = v === "off" ? null : v === "inf" ? "2100-01-01T00:00:00Z" : new Date(Date.now() + Number(v) * 3600e3).toISOString();
+  saveS(); paintDnd();
+};
+function paintBadges() {
+  let total = 0;
+  ["general", "random", "ideas"].forEach(c => {
+    const n = unreadCh[c] || 0, b = $("bdg-" + c), mut = S.muted.includes("ch:" + c);
+    b.style.display = n ? "inline-block" : "none"; b.textContent = n > 99 ? "99+" : n; b.classList.toggle("mut", mut);
+    if (!mut) total += n;
+  });
+  Object.entries(unreadDM).forEach(([id, n]) => { if (n && !S.muted.includes("dm:" + id)) total += n; });
+  document.title = (total ? "(" + total + ") " : "") + "Pulse Messenger";
+}
+function markChanRead(c) {
+  unreadCh[c] = 0; paintBadges();
+  if (me) sb.from("read_state").upsert({ user_id: me, channel: c, last_read: nowIso() }).then(() => {});
+}
+function markChanReadSoon() { if (mcTimer) return; mcTimer = setTimeout(() => { mcTimer = null; if (!dm) markChanRead(channel); }, 3000); }
+async function loadUnread() {
+  const { data: rs } = await sb.from("read_state").select("channel,last_read");
+  const lr = {}; (rs || []).forEach(r => { lr[r.channel] = r.last_read; });
+  for (const c of ["general", "random", "ideas"]) {
+    if (!lr[c]) { unreadCh[c] = 0; sb.from("read_state").upsert({ user_id: me, channel: c, last_read: nowIso() }).then(() => {}); continue; }
+    const { count } = await sb.from("messages").select("id", { count: "exact", head: true }).eq("channel", c).neq("user_id", me).gt("created_at", lr[c]);
+    unreadCh[c] = (!dm && channel === c) ? 0 : (count || 0);
+  }
+  const { data: d } = await sb.from("direct_messages").select("sender_id").eq("recipient_id", me).is("seen_at", null).limit(1000);
+  unreadDM = {}; (d || []).forEach(r => { unreadDM[r.sender_id] = (unreadDM[r.sender_id] || 0) + 1; });
+  paintBadges(); paintFriends();
 }
 
 $("send").onclick = send;

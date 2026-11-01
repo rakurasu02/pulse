@@ -6,3 +6,6 @@ window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 window.PULSE_OPERATOR = "Jeremiah Ferrer";
 window.PULSE_CONTACT = "rakurasu02@gmail.com";   // where users can reach you about abuse and privacy
 window.PULSE_COUNTRY = "the Philippines";             // whose laws apply, e.g. "the Philippines"
+
+// ---- Optional: GIF search. Get a free key at developers.giphy.com, then paste it between the quotes ----
+window.GIPHY_KEY = "";
