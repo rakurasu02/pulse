@@ -568,7 +568,7 @@ async function loadFriends() {
   fs = (a.data || []).filter(r => !blocked.has(other(r))); mr = (b.data || []).filter(r => !blocked.has(partnerOf(r)));
   const ids = [...fs.map(other), ...mr.map(r => r.sender_id === me ? r.recipient_id : r.sender_id)];
   if (ids.some(id => !names[id])) await loadNames();
-  paintFriends(); runFind(); updateBar();
+  paintFriends(); runFind(); updateBar(); paintBadges();
   if (dm) markIncoming(dm);
 }
 
@@ -697,7 +697,7 @@ async function subscribeDM() {
       if (!names[m.sender_id]) await loadNames();
       if (connOf(m.sender_id) === "none") await loadFriends();
       if (dm === m.sender_id) { add({ ...m, user_id: m.sender_id }); hideTyping(); } else { unread.add(m.sender_id); unreadDM[m.sender_id] = (unreadDM[m.sender_id] || 0) + 1; paintBadges(); }
-      if (shouldBeep("dm:" + m.sender_id)) beep();
+      if (connOf(m.sender_id) === "ok" && shouldBeep("dm:" + m.sender_id)) beep();
       paintFriends();
       markAllDelivered();
       if (dm === m.sender_id) markIncoming(m.sender_id);
@@ -1229,7 +1229,7 @@ function paintBadges() {
     b.style.display = n ? "inline-block" : "none"; b.textContent = n > 99 ? "99+" : n; b.classList.toggle("mut", mut);
     if (!mut) total += n;
   });
-  Object.entries(unreadDM).forEach(([id, n]) => { if (n && !S.muted.includes("dm:" + id)) total += n; });
+  Object.entries(unreadDM).forEach(([id, n]) => { if (n && connOf(id) === "ok" && !S.muted.includes("dm:" + id)) total += n; });
   document.title = (total ? "(" + total + ") " : "") + "Pulse Messenger";
   setNb("chats", total);
 }
