@@ -72,6 +72,10 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 .egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;overflow-y:auto;max-height:50vh}
 .egrid button{border:0;background:none;font-size:24px;cursor:pointer;border-radius:8px;padding:4px}.egrid button:hover{background:var(--their)}
 .av{position:relative}
+#more{display:none!important}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.sw.on{outline:2px solid var(--text);outline-offset:1px}
+#editProf textarea,#editProf input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
 .pane{display:flex;flex-direction:column;gap:4px}
 .mecard{text-align:center;padding:14px 10px;border:1px solid var(--line);border-radius:16px;background:var(--bg);margin-bottom:8px}
 #tabs{display:flex;flex:none;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -147,7 +151,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
  #app{flex-direction:column;height:100dvh}
  #side{width:100%;flex:1;min-height:0;overflow-y:auto;border-right:0;padding:14px 12px}
  #side h2{display:flex;justify-content:space-between;align-items:center;font-size:28px;margin:0 4px 12px}
- #gear2{display:block}#gear{display:none}#back{display:block}
+ #gear2{display:block}#back{display:block}
  #main{display:none;flex:1;min-height:0}
  body.chat-open #side{display:none}
  body.chat-open #main{display:flex}
@@ -213,7 +217,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     </div>
   </nav>
   <section id="main">
-    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
+    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Chat settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
     <div id="typing"></div>
     <div id="dmbar"></div>
     <div id="replybar"></div>
@@ -233,6 +237,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 </div>
 
 <div id="set"><div class="box"><h3>Settings <button id="sx" title="Close">✕</button></h3>
+  <div class="sub" style="padding:0 0 6px">These are your defaults for every chat. To change something for just one chat, open ⚙️ inside that chat.</div>
   <div class="srow"><label for="sTheme">Theme</label><select id="sTheme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
   <div class="srow"><label for="sSize">Text size</label><select id="sSize"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
   <div class="srow"><label for="sEnter">Press Enter to send</label><input type="checkbox" id="sEnter"></div>
@@ -240,14 +245,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sDnd">Do not disturb</label><select id="sDnd"><option value="keep">Choose…</option><option value="off">Off</option><option value="1">For 1 hour</option><option value="8">For 8 hours</option><option value="inf">Until I turn it off</option></select></div>
   <div class="sub" id="sDndNote"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
-  <div class="sec">My profile</div>
-  <div style="display:flex;align-items:center;gap:10px"><span class="av" id="myAv" style="width:56px;height:56px;font-size:22px;margin:0"></span>
-    <div style="flex:1"><button class="bt wide" id="avPick" style="margin:0 0 6px">Change photo</button><button class="bt wide" id="avDel" style="margin:0">Remove photo</button></div></div>
-  <input type="file" id="avFile" accept="image/*" hidden>
-  <textarea id="bioTxt" rows="2" maxlength="150" placeholder="Bio (up to 150 characters)" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit"></textarea>
-  <input type="text" id="stTxt" list="stlist" maxlength="40" placeholder="Status, e.g. Available" style="width:100%;margin-top:6px">
-  <datalist id="stlist"><option value="Available"><option value="Busy"><option value="Away"><option value="At school"><option value="At work"><option value="In a meeting"><option value="Sleeping"></datalist>
-  <button class="bt pri wide" id="profSave">Save profile</button>
+  <div class="sec">Privacy</div>
   <div class="srow"><label for="sShow">Show when I’m online and my last seen</label><input type="checkbox" id="sShow"></div>
   <button class="bt wide" id="starBtn">⭐ Starred messages</button>
   <div class="sec">Blocked people</div><div id="sBlocked"></div>
@@ -257,8 +255,28 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="sub" id="sMe"></div>
 </div></div>
 
-<div class="ov" id="sheet"><div class="bx"><h3 id="shName"></h3>
-  <button class="bt" id="shMute">🔕 Mute</button><button class="bt" id="shNick">✏️ Nickname</button><button class="bt" id="shBlock">🚫 Block</button><button class="bt" id="shReport">⚑ Report</button><button class="bt" id="shCancel">Cancel</button></div></div>
+<div class="ov" id="sheet"><div class="bx">
+  <div style="display:flex;align-items:center;gap:10px"><span class="av" id="csAv" style="margin:0"></span>
+    <div style="min-width:0"><h3 id="shName" style="margin:0"></h3><div class="sub" id="csSub" style="padding:0"></div></div></div>
+  <div class="sub" style="padding:0">These settings are only for this chat.</div>
+  <div class="sec">Notifications</div>
+  <div class="srow"><label for="csMute">Mute this chat</label><input type="checkbox" id="csMute"></div>
+  <div class="srow"><label for="csSound">Sound</label><select id="csSound"><option value="default">Use my default</option><option value="on">Always on</option><option value="off">Off</option></select></div>
+  <div class="sec">Appearance</div>
+  <div class="srow"><label>Chat color</label><span id="csColors" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></span></div>
+  <div class="srow"><label for="csSize">Text size</label><select id="csSize"><option value="default">Use my default</option><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
+  <div class="sec">Typing</div>
+  <div class="srow"><label for="csEnter">Enter key sends</label><select id="csEnter"><option value="default">Use my default</option><option value="on">Yes</option><option value="off">No</option></select></div>
+  <div class="srow"><label for="csMood">Message mood</label><select id="csMood"><option value="default">Use my default</option><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
+  <div id="csDm"><div class="sec">This person</div>
+    <button class="bt wide" id="csProfile">👤 View profile</button><button class="bt wide" id="shNick">✏️ Nickname</button></div>
+  <div class="sec">In this chat</div>
+  <button class="bt wide" id="csSearch">🔍 Search messages</button><button class="bt wide" id="csPins">📌 Pinned messages</button>
+  <div id="csSafe"><div class="sec">Privacy &amp; safety</div>
+    <button class="bt wide" id="shBlock">🚫 Block</button><button class="bt wide" id="shReport">⚑ Report</button></div>
+  <button class="bt wide" id="csReset">Reset this chat’s settings</button>
+  <button class="bt pri wide" id="shCancel">Done</button>
+</div></div>
 <div class="ov" id="nick"><div class="bx"><h3>Nickname</h3><div class="sub" id="nkReal" style="padding:0"></div>
   <input type="text" id="nkTxt" maxlength="30" placeholder="Nickname" autocomplete="off">
   <div class="sub" style="padding:0">Only you can see this nickname.</div>
@@ -279,6 +297,14 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <button class="bt" id="mmClose">Close</button></div></div>
 <div class="ov" id="fw"><div class="bx"><h3>Forward to…</h3>
   <div id="fwList" style="display:flex;flex-direction:column;gap:6px"></div><button class="bt" id="fwCancel">Cancel</button></div></div>
+<div class="ov" id="editProf"><div class="bx"><h3>Edit profile</h3>
+  <div style="display:flex;align-items:center;gap:10px"><span class="av" id="myAv" style="width:64px;height:64px;font-size:24px;margin:0"></span>
+    <div style="flex:1"><button class="bt wide" id="avPick" style="margin:0 0 6px">Change photo</button><button class="bt wide" id="avDel" style="margin:0">Remove photo</button></div></div>
+  <input type="file" id="avFile" accept="image/*" hidden>
+  <textarea id="bioTxt" rows="3" maxlength="150" placeholder="Bio (up to 150 characters)"></textarea>
+  <input type="text" id="stTxt" list="stlist" maxlength="40" placeholder="Status, e.g. Available">
+  <datalist id="stlist"><option value="Available"><option value="Busy"><option value="Away"><option value="At school"><option value="At work"><option value="In a meeting"><option value="Sleeping"></datalist>
+  <button class="bt pri" id="profSave">Save profile</button><button class="bt" id="epClose">Close</button></div></div>
 <div class="ov" id="sr"><div class="bx"><h3>Search this chat</h3><input type="text" id="srQ" placeholder="Type at least 2 letters…" autocomplete="off">
   <div id="srList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:50vh"></div><button class="bt" id="srClose">Close</button></div></div>
 <div class="ov" id="pins"><div class="bx"><h3>📌 Pinned messages</h3><div id="pinList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:55vh"></div><button class="bt" id="pinsClose">Close</button></div></div>
@@ -312,12 +338,13 @@ let signup = false, me = null, channel = "general", sub = null, names = {}, seen
 
 /* ---- settings ---- */
 let S = { theme: "auto", size: "m", enter: true, sound: true, mood: "😊", muted: [], dndUntil: null };
+function chatMood() { try { return (CS[curKey()] || {}).mood; } catch (e) { return undefined; } }
 function applyS() {
   const r = document.documentElement;
   if (S.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", S.theme);
   document.body.style.fontSize = { s: "14px", m: "16px", l: "19px" }[S.size] || "16px";
   $("sTheme").value = S.theme; $("sSize").value = S.size; $("sEnter").checked = !!S.enter;
-  $("sSound").checked = !!S.sound; paintDnd(); $("sMood").value = S.mood; $("mood").value = S.mood;
+  $("sSound").checked = !!S.sound; paintDnd(); $("sMood").value = S.mood; $("mood").value = chatMood() || S.mood;
 }
 async function loadSettings() {
   const { data } = await sb.from("settings").select("*").eq("user_id", me).maybeSingle();
@@ -424,6 +451,7 @@ async function start() {
   loadUnread();
   checkAdmin();
   startPresence();
+  loadChatSettings();
   loadStars();
   loadSettings();
   subscribeDM();
@@ -439,7 +467,7 @@ async function start() {
 async function openChannel(c, user) {
   if (user) showChat();
   if (!dm && channel) markChanRead(channel);
-  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins(); paintFriends(); updateBar(); markChanRead(c);
+  channel = c; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins(); paintFriends(); updateBar(); markChanRead(c); applyChatSettings();
   document.querySelectorAll(".room").forEach(b => b.classList.toggle("on", b.dataset.c === c));
   $("ttl").textContent = c; setHeadAv("#", true); $("msgs").innerHTML = "";
   if (sub) await sb.removeChannel(sub);
@@ -644,7 +672,7 @@ function paintFriends() {
 async function openDM(uid, user) {
   if (user) showChat();
   if (!dm && channel) markChanRead(channel);
-  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins();
+  dm = uid; unread.delete(uid); seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins(); applyChatSettings();
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
   $("ttl").textContent = dn(uid); setHeadAv((Array.from(dn(uid))[0] || "?").toUpperCase(), false, uid); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
@@ -818,22 +846,10 @@ $("repSend").onclick = async () => {
   if ($("repBlock").checked) await blockUser(repCtx.userId, true);
   alert("Thank you. Your report was sent.");
 };
-$("more").onclick = () => {
-  const ch = !dm;
-  $("shName").textContent = ch ? "# " + channel : dn(dm);
-  ["shNick", "shBlock", "shReport"].forEach(id => { $(id).style.display = ch ? "none" : "block"; });
-  $("shMute").textContent = S.muted.includes(ch ? "ch:" + channel : "dm:" + dm) ? "🔔 Unmute" : "🔕 Mute";
-  $("sheet").style.display = "flex";
-};
-$("shMute").onclick = () => {
-  const key = dm ? "dm:" + dm : "ch:" + channel;
-  S.muted = S.muted.includes(key) ? S.muted.filter(k => k !== key) : [...S.muted, key].slice(-200);
-  $("sheet").style.display = "none"; saveS(); paintBadges(); paintFriends();
-};
 $("shCancel").onclick = () => { $("sheet").style.display = "none"; };
 $("shBlock").onclick = () => { $("sheet").style.display = "none"; blockUser(dm); };
 $("shReport").onclick = () => { $("sheet").style.display = "none"; openReport({ userId: dm }); };
-["sheet", "rep", "del", "nick", "edit", "mm", "fw", "emo", "gif", "sr", "pins", "stars", "prof"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
+["sheet", "rep", "del", "nick", "edit", "editProf", "mm", "fw", "emo", "gif", "sr", "pins", "stars", "prof"].forEach(id => $(id).addEventListener("click", e => { if (e.target === $(id)) $(id).style.display = "none"; }));
 
 $("delBtn").onclick = () => { $("delTxt").value = ""; $("delGo").disabled = true; $("del").style.display = "flex"; };
 $("delCancel").onclick = () => { $("del").style.display = "none"; };
@@ -1195,7 +1211,7 @@ function previewEl(url) {
 
 /* ---- unread counts, mute, do not disturb ---- */
 const dndOn = () => !!S.dndUntil && new Date(S.dndUntil) > new Date();
-const shouldBeep = key => S.sound && !dndOn() && !S.muted.includes(key);
+const shouldBeep = key => { if (dndOn() || S.muted.includes(key)) return false; const v = (CS[key] || {}).sound; return v === "on" ? true : v === "off" ? false : !!S.sound; };
 function paintDnd() {
   $("sDnd").value = "keep";
   $("sDndNote").textContent = dndOn()
@@ -1284,7 +1300,7 @@ $("profSave").onclick = async () => {
   const bio = $("bioTxt").value.trim().slice(0, 150) || null, status = $("stTxt").value.trim().slice(0, 40) || null;
   const { error } = await sb.from("profiles").update({ bio, status }).eq("id", me);
   if (error) { alert("Couldn’t save your profile: " + error.message); return; }
-  prof[me] = { ...(prof[me] || {}), bio, status }; alert("Profile saved.");
+  prof[me] = { ...(prof[me] || {}), bio, status }; paintMe(); alert("Profile saved.");
 };
 $("avPick").onclick = () => $("avFile").click();
 $("avFile").onchange = async e => {
@@ -1475,12 +1491,80 @@ function paintMe() {
   $("meName").textContent = myFull || names[me] || "You"; $("meUser").textContent = "@" + (names[me] || "");
   $("meStatus").textContent = p.status ? "● " + p.status : ""; $("meBio").textContent = p.bio || "";
 }
-$("meEdit").onclick = () => { $("gear").onclick(); $("bioTxt").scrollIntoView({ block: "center" }); };
-$("meSettings").onclick = () => $("gear").onclick();
+$("meEdit").onclick = () => { fillProfileForm(); $("editProf").style.display = "flex"; };
+$("epClose").onclick = () => { $("editProf").style.display = "none"; };
+$("meSettings").onclick = () => $("gear2").onclick();
 $("meStars").onclick = openStars;
 
+/* ---- settings that belong to ONE chat ---- */
+let CS = {};
+const curKey = () => dm ? "dm:" + dm : "ch:" + channel;
+const csGet = (k) => (CS[curKey()] || {})[k];
+const effEnter = () => { const v = csGet("enter"); return v === "on" ? true : v === "off" ? false : !!S.enter; };
+const COLORS = [["#6c4cf5", "Purple"], ["#2f7df6", "Blue"], ["#12a594", "Teal"], ["#2fa84f", "Green"], ["#e8832a", "Orange"], ["#e5469a", "Pink"], ["#e5484d", "Red"]];
+function applyChatSettings() {
+  const cs = CS[curKey()] || {};
+  $("main").style.setProperty("--accent", /^#[0-9a-fA-F]{6}$/.test(cs.color || "") ? cs.color : "");
+  $("msgs").style.fontSize = cs.size ? ({ s: "14px", m: "16px", l: "19px" }[cs.size] || "") : "";
+  $("mood").value = cs.mood || S.mood;
+}
+async function loadChatSettings() {
+  const { data } = await sb.from("chat_settings").select("chat_key,settings");
+  CS = {}; (data || []).forEach(r => { CS[r.chat_key] = r.settings || {}; });
+  applyChatSettings();
+}
+async function csSet(patch) {
+  const key = curKey(), next = { ...(CS[key] || {}), ...patch };
+  Object.keys(next).forEach(k => { if (next[k] == null || next[k] === "default") delete next[k]; });
+  CS[key] = next; applyChatSettings();
+  const { error } = Object.keys(next).length
+    ? await sb.from("chat_settings").upsert({ user_id: me, chat_key: key, settings: next, updated_at: nowIso() })
+    : await sb.from("chat_settings").delete().eq("chat_key", key);
+  if (error) alert("Couldn’t save this chat’s settings: " + error.message);
+}
+function paintSwatches(sel) {
+  const box = $("csColors"); box.innerHTML = "";
+  COLORS.forEach(([c, name], i) => {
+    const b = document.createElement("button"); b.className = "sw" + ((sel || COLORS[0][0]) === c ? " on" : ""); b.title = name; b.style.background = c;
+    b.onclick = () => { csSet({ color: i === 0 ? null : c }); paintSwatches(i === 0 ? null : c); }; box.appendChild(b);
+  });
+}
+function openChatSettings() {
+  const ch = !dm, key = curKey(), cs = CS[key] || {}, av = $("csAv");
+  $("shName").textContent = ch ? "# " + channel : dn(dm);
+  $("csSub").textContent = ch ? "Channel" : ((prof[dm] && prof[dm].status) || "Private chat");
+  av.textContent = ch ? "#" : (Array.from(dn(dm))[0] || "?").toUpperCase(); av.style.backgroundImage = ""; av.style.background = ch ? "var(--their)" : ""; av.style.color = ch ? "var(--accent)" : "";
+  if (!ch) setAv(av, dm); av.onclick = null; av.style.cursor = "";
+  $("csDm").style.display = ch ? "none" : "block"; $("csSafe").style.display = ch ? "none" : "block";
+  $("csMute").checked = S.muted.includes(key); $("csSound").value = cs.sound || "default"; $("csSize").value = cs.size || "default";
+  $("csEnter").value = cs.enter || "default"; $("csMood").value = cs.mood || "default"; paintSwatches(cs.color);
+  $("sheet").style.display = "flex";
+}
+$("gear").onclick = openChatSettings;
+$("csMute").onchange = e => {
+  const key = curKey();
+  S.muted = e.target.checked ? [...new Set([...S.muted, key])].slice(-200) : S.muted.filter(k => k !== key);
+  saveS(); paintBadges(); paintFriends();
+};
+$("csSound").onchange = e => csSet({ sound: e.target.value });
+$("csSize").onchange = e => csSet({ size: e.target.value });
+$("csEnter").onchange = e => csSet({ enter: e.target.value });
+$("csMood").onchange = e => csSet({ mood: e.target.value });
+$("csProfile").onclick = () => { $("sheet").style.display = "none"; openProfile(dm); };
+$("csSearch").onclick = () => { $("sheet").style.display = "none"; $("srch").onclick(); };
+$("csPins").onclick = () => {
+  $("sheet").style.display = "none";
+  if (pins.length) openPins(); else alert("No pinned messages in this chat yet. Tap ⋯ under a message, then Pin.");
+};
+$("csReset").onclick = async () => {
+  if (!confirm("Reset this chat’s settings back to your defaults?")) return;
+  const key = curKey(); CS[key] = {}; S.muted = S.muted.filter(k => k !== key);
+  await sb.from("chat_settings").delete().eq("chat_key", key);
+  saveS(); applyChatSettings(); paintBadges(); paintFriends(); openChatSettings();
+};
+
 $("send").onclick = send;
-$("txt").addEventListener("keydown", e => { if (e.key === "Enter" && S.enter) send(); });
+$("txt").addEventListener("keydown", e => { if (e.key === "Enter" && effEnter()) send(); });
 </script>
 </body>
 </html>
