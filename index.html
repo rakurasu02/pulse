@@ -90,6 +90,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
  #tabs .nb{left:calc(50% + 4px);top:2px}
 }
 @media (max-width:640px){ body.chat-open #tabs{display:none} }
+.dot.off{background:#8e8ca3}
 .dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#2fbf71;border:2px solid var(--panel);font-style:normal}
 .ht{display:flex;flex-direction:column;line-height:1.2;min-width:0}
 #hsub{font-size:12px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1253,7 +1254,7 @@ async function loadUnread() {
 
 /* ---- profiles, presence, pins, stars, search ---- */
 let prof = {}, pins = [], starred = new Set(), isAdmin = false;
-let pres = {}, showMe = true, hbTimer = null, presTimer = null, presTick = 0;
+let presLoaded = false, pres = {}, showMe = true, hbTimer = null, presTimer = null, presTick = 0;
 
 const avUrl = path => sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
 const online = id => showMe && pres[id] && (Date.now() - new Date(pres[id]).getTime()) < 150000;
@@ -1268,7 +1269,9 @@ function lastSeenText(id) {
 function setAv(el, id) {
   const p = prof[id];
   if (p && p.avatar_path) { el.textContent = ""; el.style.backgroundImage = 'url("' + encodeURI(avUrl(p.avatar_path)) + '")'; el.style.backgroundSize = "cover"; el.style.backgroundPosition = "center"; }
-  if (online(id)) { const d = document.createElement("i"); d.className = "dot"; el.appendChild(d); }
+  if (presLoaded && showMe && id !== me && fs.some(r => r.status === "accepted" && other(r) === id)) {
+    const on = online(id), d = document.createElement("i"); d.className = "dot" + (on ? "" : " off"); d.title = on ? "Online" : "Offline"; el.appendChild(d);
+  }
   el.style.cursor = "pointer"; el.onclick = e => { e.stopPropagation(); openProfile(id); };
 }
 function updateHeadSub() {
@@ -1338,6 +1341,7 @@ async function heartbeat() {
 async function loadPresence() {
   const { data } = await sb.from("user_presence").select("user_id,last_seen");
   pres = {}; if (showMe) (data || []).forEach(r => { if (r.user_id !== me) pres[r.user_id] = r.last_seen; });
+  presLoaded = true;
   if (++presTick % 5 === 0) await loadNames();
   paintFriends(); updateHeadSub();
 }
