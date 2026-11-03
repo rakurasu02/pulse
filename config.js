@@ -9,3 +9,6 @@ window.PULSE_COUNTRY = "the Philippines";             // whose laws apply, e.g. 
 
 // ---- Optional: GIF search. Get a free key at developers.giphy.com, then paste it between the quotes ----
 window.GIPHY_KEY = "";
+
+// ---- Push notifications: paste your VAPID PUBLIC key (from vapid-keys.html) between the quotes ----
+window.VAPID_PUBLIC_KEY = "";

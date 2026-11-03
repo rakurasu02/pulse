@@ -22,6 +22,7 @@ nav{display:flex;gap:14px;font-size:14px}
 <ul>
 <li><b>Account details:</b> your email address, username, first and last name, and password. Your first and last name are stored privately and can be seen only by you; other users see only your username. You can log in with your username or email. Passwords are handled by our sign-in provider and are stored in hashed form; we cannot read them.</li>
 <li><b>Profile:</b> an optional profile picture, bio and status, plus when you were last active (your “last seen”).</li>
+<li><b>Groups, stories and notifications:</b> the groups you are in and their members, stories and mood posts (deleted after 24 hours) and who viewed them, and — only if you turn notifications on — a device address used to send you push notifications.</li>
 <li><b>Content you send:</b> messages, images, videos, audio and other files you send in channels and private chats, with their time stamps.</li>
 <li><b>Chat status:</b> whether a private message was delivered and seen, and when.</li>
 <li><b>Your connections:</b> friend requests, friends, message requests, people you have blocked, and private nicknames you set for others (only you can see your nicknames).</li>
@@ -46,12 +47,13 @@ nav{display:flex;gap:14px;font-size:14px}
 <li><b>Your username</b> can be found by other signed-in users through search.</li>
 <li><b>Your profile picture, bio and status</b> can be seen by every signed-in user. <b>Your online status and last seen</b> can be seen only by your friends, and only if you leave “Show when I’m online” on in Settings. If you turn it off, you also stop seeing other people’s.</li>
 <li><b>Pinned messages</b> in a private chat are visible to both people. <b>Starred messages</b> are private to you.</li>
+<li><b>Group messages</b> can be read by everyone currently in that group. <b>Stories and mood posts</b> can be seen only by your friends, for 24 hours, and you can see who viewed yours.</li>
 <li><b>Not end-to-end encrypted.</b> Messages are protected in transit (HTTPS) and by access rules in the database, but they are stored on our servers in readable form. The operator and our database provider have technical access to stored data. We will only look at private messages when needed to handle a report, keep the service secure, or meet a legal duty.</li>
 <li>The person you message can copy, screenshot or share what you send, so only send what you are comfortable with.</li>
 </ul>
 
 <h2>4. Service providers</h2>
-<p>We rely on: <b>Supabase</b> (account sign-in, database, file storage and live updates), <b>GitHub Pages</b> (website hosting), and <b>jsDelivr</b> (delivery of a code library the app needs). If you use GIFs, your device loads them from <b>GIPHY</b>. Link previews are fetched by our server, and preview pictures then load from the linked website. Voice notes use your microphone only while you are recording. They process data on our behalf and may store it on servers outside your country. We share information with authorities only when the law requires it or to protect someone’s safety.</p>
+<p>We rely on: <b>Supabase</b> (account sign-in, database, file storage and live updates), <b>GitHub Pages</b> (website hosting), and <b>jsDelivr</b> (delivery of a code library the app needs). If you use GIFs, your device loads them from <b>GIPHY</b>. Link previews are fetched by our server, and preview pictures then load from the linked website. Voice notes use your microphone only while you are recording. Push notifications are delivered through your browser’s push service (for example Google, Apple or Mozilla). They process data on our behalf and may store it on servers outside your country. We share information with authorities only when the law requires it or to protect someone’s safety.</p>
 
 <h2>5. How long we keep data</h2>
 <p>We keep your information while your account exists. Messages and files stay until the account is deleted. Reports are kept as long as needed to keep the service safe; if a reporter or reported person deletes their account, their name is removed from the report but the report and message copy can be kept.</p>

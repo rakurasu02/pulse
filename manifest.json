@@ -1,0 +1,15 @@
+{
+  "name": "Pulse Messenger",
+  "short_name": "Pulse",
+  "description": "Chat with friends, groups and channels.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d1a2d",
+  "theme_color": "#6c4cf5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
