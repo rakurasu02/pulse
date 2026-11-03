@@ -8,7 +8,7 @@ window.PULSE_CONTACT = "rakurasu02@gmail.com";   // where users can reach you ab
 window.PULSE_COUNTRY = "the Philippines";             // whose laws apply, e.g. "the Philippines"
 
 // ---- Optional: GIF search. Get a free key at developers.giphy.com, then paste it between the quotes ----
-window.GIPHY_KEY = "";
+window.GIPHY_KEY = "WtvJZPXiHMJ6sC2hju3g7IPKclQ0PoEF";
 
 // ---- Push notifications: paste your VAPID PUBLIC key (from vapid-keys.html) between the quotes ----
-window.VAPID_PUBLIC_KEY = "";
+window.VAPID_PUBLIC_KEY = "BCOOwco_6KdpDVUkz3oHCzGB_zmuaQwRRBHMuFKHanU55AdOEh8TCulg3Vx2xp8d6VNJgOD2myUvZ4_LrglPAOE";
