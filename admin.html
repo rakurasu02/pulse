@@ -74,7 +74,9 @@ async function rep(box) {
       r.details ? el("div", { class: "quote" }, "“" + r.details + "”") : "",
       r.message_text ? el("div", { class: "quote" }, "Message: " + r.message_text) : "",
       el("div", {},
-        r.message_kind && r.message_id ? el("button", { class: "b red", onclick: () => delMsg(r.message_kind, r.message_id, load) }, "Delete message") : "",
+        r.message_kind && r.message_id ? el("button", { class: "b red", onclick: () => delMsg(r.message_kind, r.message_id, load) }, r.message_kind === "story" ? "Delete story" : "Delete message") : "",
+        r.message_kind === "profile" && r.reported_id ? el("button", { class: "b red", onclick: () => clearProfile(r.reported_id, load) }, "Clear photo, bio & status") : "",
+        r.evidence_path ? el("button", { class: "b", onclick: () => viewPhoto(r.evidence_path) }, "View photo") : "",
         r.reported_id && !r.reported_banned ? el("button", { class: "b red", onclick: () => ban(r.reported_id, load) }, "Ban user") : "",
         r.reported_id && r.reported_banned ? el("button", { class: "b", onclick: () => unban(r.reported_id, load) }, "Unban") : "",
         r.status !== "resolved" ? el("button", { class: "b pri", onclick: () => setRep(r.id, "resolved", load) }, "Resolve") : "",
@@ -117,8 +119,20 @@ async function delMsg(kind, id, done) {
   if (!confirm("Delete this message permanently?")) return;
   const { data, error } = await sb.rpc("admin_delete_message", { p_kind: kind, p_id: id });
   if (error) return alert(error.message);
-  if (data) await sb.storage.from("attachments").remove([data]);
+  if (data) await sb.storage.from(kind === "story" ? "stories" : "attachments").remove([data]);
   done();
+}
+async function clearProfile(id, done) {
+  if (!confirm("Remove this person’s profile picture, bio and status?")) return;
+  const { data, error } = await sb.rpc("admin_clear_profile", { p_uid: id });
+  if (error) return alert(error.message);
+  if (data) await sb.storage.from("avatars").remove([data]);
+  done();
+}
+async function viewPhoto(path) {
+  const { data, error } = await sb.storage.from("stories").createSignedUrl(path, 600);
+  if (error || !data) return alert("The photo is no longer available (stories are removed after 24 hours).");
+  window.open(data.signedUrl, "_blank", "noopener");
 }
 init();
 </script></body></html>

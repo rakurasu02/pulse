@@ -119,6 +119,10 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #svBody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:90px 24px 40px;gap:14px;font-size:26px;overflow:hidden;cursor:pointer;position:relative;overflow-wrap:anywhere}
 #svBody img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
 #svViewList{display:none;position:absolute;left:0;right:0;bottom:0;max-height:50%;overflow:auto;background:#111e;padding:14px;font-size:15px;z-index:3}
+.mn{font-weight:700;color:var(--accent)}.m.me .mn{color:#fff;text-decoration:underline}
+#mbox{display:none;flex-direction:column;border-top:1px solid var(--line);background:var(--panel);max-height:190px;overflow-y:auto}
+#mbox button{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--text);padding:8px 14px;font:inherit;cursor:pointer;text-align:left}
+#mbox button:hover{background:var(--their)}
 .fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
 .rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .rq b{display:block;font-size:12px}
@@ -243,6 +247,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Chat settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
     <div id="typing"></div>
     <div id="dmbar"></div>
+    <div id="mbox"></div>
     <div id="replybar"></div>
     <div id="tools"><button class="tb" id="attach">📎 File</button><button class="tb" id="voice">🎤 Voice note</button><button class="tb" id="vcancel" style="display:none">✕ Cancel</button><button class="tb" id="emoBtn">🙂 Emoji</button><button class="tb" id="gifBtn">GIF</button></div>
     <div id="bar">
@@ -339,6 +344,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div id="ngList" style="overflow-y:auto;max-height:40vh"></div>
   <button class="bt pri" id="ngGo">Create group</button><button class="bt" id="ngCancel">Cancel</button></div></div>
 <div class="ov" id="gi"><div class="bx"><h3>Group info</h3>
+  <div style="display:flex;align-items:center;gap:10px"><span class="av" id="giAv" style="width:56px;height:56px;font-size:24px;margin:0"></span>
+    <button class="bt" id="giPic" style="flex:1">Change group picture</button><input type="file" id="giFile" accept="image/*" hidden></div>
   <input type="text" id="giName" maxlength="40"><button class="bt" id="giRename">Save name</button>
   <div class="sub" id="giCount" style="padding:0"></div>
   <div id="giList" style="overflow-y:auto;max-height:40vh"></div>
@@ -356,7 +363,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 <div id="sv"><div id="svTop"><div id="svProg"></div>
   <div id="svHead"><span class="av" id="svAv" style="margin:0;width:36px;height:36px"></span>
     <div style="flex:1;min-width:0"><b id="svName"></b><div id="svTime" style="font-size:12px;opacity:.75"></div></div>
-    <button class="svb" id="svViews"></button><button class="svb" id="svDel">🗑</button><button class="svb" id="svClose">✕</button></div></div>
+    <button class="svb" id="svViews"></button><button class="svb" id="svRep" title="Report this story">⚑</button><button class="svb" id="svDel">🗑</button><button class="svb" id="svClose">✕</button></div></div>
   <div id="svBody"></div><div id="svViewList"></div></div>
 <div class="ov" id="sr"><div class="bx"><h3>Search this chat</h3><input type="text" id="srQ" placeholder="Type at least 2 letters…" autocomplete="off">
   <div id="srList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:50vh"></div><button class="bt" id="srClose">Close</button></div></div>
@@ -364,7 +371,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 <div class="ov" id="stars"><div class="bx"><h3>⭐ Starred messages</h3><div id="starList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:55vh"></div><button class="bt" id="starsClose">Close</button></div></div>
 <div class="ov" id="prof"><div class="bx" style="align-items:center;text-align:center"><span class="av" id="pAv" style="width:96px;height:96px;font-size:36px;margin:0"></span>
   <h3 id="pName"></h3><div class="sub" id="pUser" style="padding:0"></div><div id="pStatus"></div><div id="pBio" class="sub" style="padding:0;white-space:pre-wrap"></div><div class="sub" id="pSeen" style="padding:0"></div>
-  <button class="bt" id="pClose" style="width:100%">Close</button></div></div>
+  <button class="bt" id="pReport" style="width:100%;display:none">⚑ Report this profile</button><button class="bt" id="pClose" style="width:100%">Close</button></div></div>
 <div class="ov" id="emo"><div class="bx"><h3>Emoji</h3><div class="egrid" id="egrid"></div><button class="bt" id="emoClose">Close</button></div></div>
 <div class="ov" id="gif"><div class="bx"><h3>GIFs</h3><input type="text" id="gifQ" placeholder="Search GIFs…" autocomplete="off">
   <div class="grid2" id="gifGrid"></div><div class="sub" style="padding:0">Powered by GIPHY</div><button class="bt" id="gifClose">Close</button></div></div>
@@ -558,8 +565,9 @@ function add(m) {
   if (blocked.has(m.user_id)) return;
   const box = $("msgs"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
   const d = document.createElement("div"); d.className = "m" + (m.user_id === me ? " me" : "");
+  if (m.mentions && m.mentions.includes(me)) d.style.boxShadow = "0 0 0 2px var(--accent)";
   const w = document.createElement("div"); w.className = "who"; w.textContent = m.user_id === me ? "You" : ((m.recipient_id || m.group_id) ? dn(m.user_id) : (names[m.user_id] || "Someone"));
-  const t = document.createElement("div"); linkify(t, m.mood, m.text); if (!m.text) t.style.display = "none";
+  const t = document.createElement("div"); linkify(t, m.mood, m.text, mentionNames(m)); if (!m.text) t.style.display = "none";
   const pre = [];
   if (m.forwarded) { const f = document.createElement("div"); f.className = "fwd"; f.textContent = "↪ Forwarded"; pre.push(f); }
   if (m.reply_to && m.reply_preview) {
@@ -583,6 +591,7 @@ function add(m) {
   const tm = document.createElement("div"); tm.className = "tm"; tm.textContent = fmtTime(m.created_at);
   const ed = document.createElement("span"); ed.textContent = m.edited_at ? " · edited" : ""; tm.appendChild(ed);
   if (m.recipient_id && m.user_id === me) { const tk = document.createElement("span"); tk.style.marginLeft = "6px"; ticks[m.id] = tk; paintTick(tk, m); tm.appendChild(tk); }
+  if (m.group_id && m.user_id === me) { const so = document.createElement("span"); so.className = "seenby"; so.style.marginLeft = "6px"; tm.appendChild(so); }
   const mo = document.createElement("span"); mo.className = "rp"; mo.textContent = "⋯"; mo.title = "Reply, react, forward…"; mo.onclick = () => openMenu(m); tm.appendChild(mo);
   const rx = document.createElement("div"); rx.className = "rx";
   els[m.id] = { mw: null, t, ed, rx, m };
@@ -596,9 +605,11 @@ async function send() {
   const v = snap(), mood = $("mood").value;
   const rt = replyTo ? replyTo.id : null; clearReply();
   if (v.dm && !(await ensureConn(v.dm))) { $("txt").value = text; return; }
-  const { data, error } = await insertMsg(v, { text, mood, reply_to: rt });
+  const row = { text, mood, reply_to: rt };
+  if (v.grp) { const ids = mentionIds(text); if (ids.length) row.mentions = ids; pendingMentions.clear(); hideMentions(); }
+  const { data, error } = await insertMsg(v, row);
   if (error) { $("txt").value = text; alert(/row-level security/.test(error.message) ? "Couldn’t send this message. In a private chat they may not have accepted your message request yet (you can send 3 until they do), or you may not be able to message this person. In a group, you may no longer be a member." : "Couldn’t send: " + error.message); return; }
-  if (sameView(v)) add(asRow(v, data));
+  if (sameView(v)) { add(asRow(v, data)); if (v.grp) paintSeen(); }
 }
 /* ---- friends, requests & search ---- */
 let grp = null, groups = [], unreadG = {}, gmem = {}, fs = [], mr = [], unreadCh = {}, unreadDM = {}, mcTimer = null, els = {}, rxs = {}, replyTo = null, typeCh = {}, typeSub = null, typeTimer = null, typeLast = 0, nick = {}, nickFor = null, blocked = new Set(), ticks = {}, dmUpSub = null, dm = null, unread = new Set(), dmSub = null, frSub = null, st = null;
@@ -895,7 +906,8 @@ function openReport(ctx) {
 $("repCancel").onclick = () => { $("rep").style.display = "none"; };
 $("repSend").onclick = async () => {
   const row = { reported_id: repCtx.userId, reason: $("repReason").value, details: $("repDetails").value.trim().slice(0, 500) || null };
-  if (repCtx.id) { row.message_kind = repCtx.kind; row.message_id = repCtx.id; }
+  if (repCtx.kind === "profile") row.message_kind = "profile";
+  else if (repCtx.id) { row.message_kind = repCtx.kind; row.message_id = repCtx.id; }
   const { error } = await sb.from("reports").insert(row);
   if (error) { alert("Couldn’t send the report: " + error.message); return; }
   $("rep").style.display = "none";
@@ -1003,7 +1015,7 @@ $("edSave").onclick = async () => {
 function applyEdit(row) {
   const e = els[row.id]; if (!e) return;
   e.m.text = row.text; e.m.edited_at = row.edited_at;
-  linkify(e.t, row.mood || e.m.mood || "", row.text); e.t.style.display = row.text ? "" : "none";
+  linkify(e.t, row.mood || e.m.mood || "", row.text, mentionNames(e.m)); e.t.style.display = row.text ? "" : "none";
   e.ed.textContent = row.edited_at ? " · edited" : "";
 }
 function removeEl(id) { const e = els[id]; if (e && e.mw) { e.mw.remove(); delete els[id]; } }
@@ -1035,9 +1047,10 @@ async function subscribeEdits() {
     .on("postgres_changes", { event: "*", schema: "public", table: "pins" }, () => loadPins())
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_messages" }, p => {
       const m = p.new; if (m.user_id === me || blocked.has(m.user_id)) return;
-      if (grp === m.group_id) { add(m); markGroupReadSoon(); return; }
+      if (grp === m.group_id) { add(m); gTypingClear(m.user_id); markGroupReadSoon(); return; }
+      const tagged = (m.mentions || []).includes(me); if (tagged) mentionedG[m.group_id] = true;
       unreadG[m.group_id] = (unreadG[m.group_id] || 0) + 1; paintBadges(); paintGroups();
-      if (shouldBeep("gr:" + m.group_id)) beep();
+      if (tagged ? (!dndOn() && S.sound) : shouldBeep("gr:" + m.group_id)) beep();
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "group_messages" }, p => { if (grp) applyEdit(p.new); })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "group_messages" }, p => { if (grp) removeEl(p.old.id); })
@@ -1047,7 +1060,11 @@ async function subscribeEdits() {
 }
 
 /* ---- typing, reply, forward, reactions ---- */
-function hideTyping() { clearTimeout(typeTimer); $("typing").style.display = "none"; }
+function hideTyping() {
+  clearTimeout(typeTimer); $("typing").style.display = "none";
+  Object.values(gTyping).forEach(clearTimeout); gTyping = {};
+  if (gTypeCh) { sb.removeChannel(gTypeCh); gTypeCh = null; }
+}
 function showTyping(from) {
   $("typing").textContent = dn(from) + " is typing…"; $("typing").style.display = "block";
   clearTimeout(typeTimer); typeTimer = setTimeout(hideTyping, 3500);
@@ -1060,6 +1077,7 @@ async function subscribeTyping() {
   }).subscribe();
 }
 function sendTyping() {
+  if (grp) { if (gTypeCh && Date.now() - gTypeLast > 2500) { gTypeLast = Date.now(); gTypeCh.send({ type: "broadcast", event: "typing", payload: { from: me } }); } return; }
   if (!dm || connOf(dm) !== "ok" || Date.now() - typeLast < 2500) return;
   typeLast = Date.now();
   let ch = typeCh[dm];
@@ -1091,9 +1109,9 @@ function openMenu(m) {
   $("mmRep").style.display = mine ? "none" : "block";
   $("mmCopy").style.display = m.text ? "block" : "none";
   const kind = kindOf(m);
-  $("mmPin").style.display = (!m.group_id && (m.recipient_id || isAdmin)) ? "block" : "none";
+  $("mmPin").style.display = (m.group_id ? myRole(m.group_id) === "admin" : (m.recipient_id || isAdmin)) ? "block" : "none";
   $("mmPin").textContent = pins.some(x => x.message_id === m.id) ? "📌 Unpin" : "📌 Pin";
-  $("mmStar").style.display = m.group_id ? "none" : "block";
+  $("mmStar").style.display = "block";
   $("mmStar").textContent = starred.has(kind + ":" + m.id) ? "⭐ Unstar" : "⭐ Star";
   $("mm").style.display = "flex";
 }
@@ -1251,16 +1269,26 @@ $("vcancel").onclick = () => { recCancel = true; if (rec) rec.stop(); };
 const URL_RE = /https?:\/\/[^\s<>"']+/g;
 const cleanUrl = u => u.replace(/[.,!?;:)\]]+$/, "");
 const firstUrl = text => { const m = (text || "").match(URL_RE); return m ? cleanUrl(m[0]) : null; };
-function linkify(el, mood, text) {
+function addText(el, str, mn) {
+  if (!mn || !mn.length || !str) { el.append(str); return; }
+  let last = 0;
+  for (const m of str.matchAll(/@[A-Za-z0-9_.-]{3,24}/g)) {
+    if (!mn.includes(m[0].slice(1).toLowerCase())) continue;
+    el.append(str.slice(last, m.index));
+    const b = document.createElement("span"); b.className = "mn"; b.textContent = m[0]; el.appendChild(b); last = m.index + m[0].length;
+  }
+  el.append(str.slice(last));
+}
+function linkify(el, mood, text, mn) {
   el.textContent = ""; text = text || "";
   el.append(mood ? mood + " " : "");
   let last = 0;
   for (const m of text.matchAll(URL_RE)) {
-    const u = cleanUrl(m[0]); el.append(text.slice(last, m.index));
+    const u = cleanUrl(m[0]); addText(el, text.slice(last, m.index), mn);
     const a = document.createElement("a"); a.href = u; a.textContent = u; a.target = "_blank"; a.rel = "noopener noreferrer";
     a.style.cssText = "color:inherit;text-decoration:underline"; el.appendChild(a); last = m.index + u.length;
   }
-  el.append(text.slice(last));
+  addText(el, text.slice(last), mn);
 }
 const previews = {};
 function getPreview(url) {
@@ -1359,6 +1387,8 @@ function openProfile(id) {
   $("pUser").textContent = "@" + (names[id] || "");
   $("pStatus").textContent = p.status ? "● " + p.status : "";
   $("pBio").textContent = p.bio || ""; $("pSeen").textContent = id === me ? "" : lastSeenText(id);
+  $("pReport").style.display = id === me ? "none" : "block";
+  $("pReport").onclick = () => { $("prof").style.display = "none"; openReport({ userId: id, kind: "profile", id: null }); };
   $("prof").style.display = "flex";
 }
 $("pClose").onclick = () => { $("prof").style.display = "none"; };
@@ -1432,17 +1462,16 @@ $("sShow").onchange = async e => {
 const scopeKey = () => grp ? "g" + grp : dm ? [me, dm].sort().join("_") : channel;
 const viewKey = () => (grp ? "gr:" : dm ? "dm:" : "ch:") + scopeKey();
 const pairFilter = uid => "and(sender_id.eq." + me + ",recipient_id.eq." + uid + "),and(sender_id.eq." + uid + ",recipient_id.eq." + me + ")";
-const canPin = () => !grp && (!!dm || isAdmin);
+const canPin = () => grp ? myRole(grp) === "admin" : (!!dm || isAdmin);
 function resetPins() { pins = []; $("pinbar").style.display = "none"; }
 const preview = m => m ? (m.text || (m.gif_url ? "GIF" : "📎 " + (m.file_name || "file"))) : "(message no longer available)";
 async function loadPins() {
-  if (grp) { pins = []; $("pinbar").style.display = "none"; return; }
   const key = viewKey();
   const { data } = await sb.from("pins").select("message_id,created_at").eq("kind", viewKey2()).eq("scope", scopeKey()).order("created_at", { ascending: false }).limit(10);
   if (key !== viewKey()) return;
   pins = data || []; const bar = $("pinbar");
   if (!pins.length) { bar.style.display = "none"; return; }
-  const { data: m } = await sb.from(dm ? "direct_messages" : "messages").select("id,text,file_name,gif_url").eq("id", pins[0].message_id).maybeSingle();
+  const { data: m } = await sb.from(tableOf(viewKey2())).select("id,text,file_name,gif_url").eq("id", pins[0].message_id).maybeSingle();
   if (key !== viewKey()) return;
   bar.textContent = "📌 " + preview(m).slice(0, 90) + (pins.length > 1 ? "   (+" + (pins.length - 1) + " more)" : "");
   bar.style.display = "flex"; bar.onclick = openPins;
@@ -1458,7 +1487,7 @@ async function togglePin(m) {
 async function openPins() {
   const box = $("pinList"); box.textContent = "Loading…"; $("pins").style.display = "flex";
   const ids = pins.map(x => x.message_id);
-  const { data } = ids.length ? await sb.from(dm ? "direct_messages" : "messages").select("*").in("id", ids) : { data: [] };
+  const { data } = ids.length ? await sb.from(tableOf(viewKey2())).select("*").in("id", ids) : { data: [] };
   const map = {}; (data || []).forEach(m => { map[m.id] = m; }); box.textContent = "";
   pins.forEach(x => {
     const m = map[x.message_id], c = document.createElement("div"); c.className = "c2";
@@ -1467,7 +1496,7 @@ async function openPins() {
     const tx = document.createElement("div"); tx.textContent = preview(m);
     c.append(sm, tx);
     if (m) c.appendChild(mkBtn("Go to", () => { $("pins").style.display = "none"; jumpTo(m); }));
-    if (canPin()) c.appendChild(mkBtn("Unpin", () => togglePin({ id: x.message_id, recipient_id: dm ? 1 : null }).then(() => { $("pins").style.display = "none"; }), "x"));
+    if (canPin()) c.appendChild(mkBtn("Unpin", () => togglePin({ id: x.message_id, recipient_id: dm ? 1 : null, group_id: grp }).then(() => { $("pins").style.display = "none"; }), "x"));
     box.appendChild(c);
   });
 }
@@ -1489,21 +1518,21 @@ async function toggleStar(m) {
 async function openStars() {
   const box = $("starList"); box.textContent = "Loading…"; $("stars").style.display = "flex";
   const { data: rows } = await sb.from("starred").select("kind,message_id,created_at").order("created_at", { ascending: false }).limit(60);
-  const list = rows || [], ch = list.filter(r => r.kind === "channel").map(r => r.message_id), dmI = list.filter(r => r.kind === "dm").map(r => r.message_id);
-  const [a, b] = await Promise.all([
-    ch.length ? sb.from("messages").select("*").in("id", ch) : { data: [] },
-    dmI.length ? sb.from("direct_messages").select("*").in("id", dmI) : { data: [] }]);
-  const map = {}; (a.data || []).forEach(m => { map["channel:" + m.id] = m; }); (b.data || []).forEach(m => { map["dm:" + m.id] = m; });
+  const list = rows || [], ids = k => list.filter(r => r.kind === k).map(r => r.message_id);
+  const q = k => ids(k).length ? sb.from(tableOf(k)).select("*").in("id", ids(k)) : { data: [] };
+  const [a, b, g] = await Promise.all([q("channel"), q("dm"), q("group")]);
+  const map = {};
+  (a.data || []).forEach(m => { map["channel:" + m.id] = m; }); (b.data || []).forEach(m => { map["dm:" + m.id] = m; }); (g.data || []).forEach(m => { map["group:" + m.id] = m; });
   box.textContent = "";
-  if (!list.length) { note(box, "Nothing starred yet. Tap ⋯ on a message, then Star."); return; }
+  if (!list.length) { note(box, "Nothing starred yet. Tap ⋯ under a message, then Star."); return; }
   list.forEach(r => {
     const m = map[r.kind + ":" + r.message_id], c = document.createElement("div"); c.className = "c2";
     const other = m && r.kind === "dm" ? (m.sender_id === me ? m.recipient_id : m.sender_id) : null;
     const sm = document.createElement("small");
-    sm.textContent = m ? (r.kind === "dm" ? "💬 " + dn(other) + " · " + dn(m.sender_id) : "# " + m.channel + " · " + (names[m.user_id] || "Someone")) + " · " + fmtTime(m.created_at) : "";
+    sm.textContent = m ? (r.kind === "dm" ? "💬 " + dn(other) + " · " + dn(m.sender_id) : r.kind === "group" ? "👥 " + gname(m.group_id) + " · " + dn(m.user_id) : "# " + m.channel + " · " + (names[m.user_id] || "Someone")) + " · " + fmtTime(m.created_at) : "";
     const tx = document.createElement("div"); tx.textContent = preview(m); c.append(sm, tx);
-    if (m) c.appendChild(mkBtn("Open chat", () => { $("stars").style.display = "none"; if (r.kind === "dm") openDM(other, true); else openChannel(m.channel, true); }));
-    c.appendChild(mkBtn("Unstar", async () => { await toggleStar({ id: r.message_id, recipient_id: r.kind === "dm" ? 1 : null }); openStars(); }, "x"));
+    if (m) c.appendChild(mkBtn("Open chat", () => { $("stars").style.display = "none"; if (r.kind === "dm") openDM(other, true); else if (r.kind === "group") openGroup(m.group_id, true); else openChannel(m.channel, true); }));
+    c.appendChild(mkBtn("Unstar", async () => { await toggleStar({ id: r.message_id, recipient_id: r.kind === "dm" ? 1 : null, group_id: r.kind === "group" ? 1 : null }); openStars(); }, "x"));
     box.appendChild(c);
   });
 }
@@ -1615,10 +1644,10 @@ function openChatSettings() {
   $("csMute").checked = S.muted.includes(key); $("csSound").value = cs.sound || "default"; $("csSize").value = cs.size || "default";
   $("csEnter").value = cs.enter || "default"; $("csMood").value = cs.mood || "default"; paintSwatches(cs.color);
   if (grp) {
-    $("shName").textContent = gname(grp); $("csSub").textContent = "Group"; av.textContent = "👥"; av.style.background = "var(--their)"; av.style.color = "var(--accent)";
+    $("shName").textContent = gname(grp); $("csSub").textContent = "Group"; av.textContent = "👥"; av.style.background = "var(--their)"; av.style.color = "var(--accent)"; groupAv(av, groups.find(x => x.id === grp));
     $("csDm").style.display = "none"; $("csSafe").style.display = "none";
   }
-  $("csGroup").style.display = grp ? "block" : "none"; $("csPins").style.display = grp ? "none" : "block";
+  $("csGroup").style.display = grp ? "block" : "none"; $("csPins").style.display = "block";
   $("sheet").style.display = "flex";
 }
 $("gear").onclick = openChatSettings;
@@ -1686,15 +1715,15 @@ function paintGroups() {
   if (!groups.length) { note(box, "No groups yet. Tap ＋ New to start one."); return; }
   groups.forEach(g => {
     const n = unreadG[g.id] || 0, muted = S.muted.includes("gr:" + g.id);
-    const row = mkRow(g.name + (muted ? " 🔕" : ""), [], () => openGroup(g.id, true));
-    const av = row.children[0]; av.textContent = "👥"; av.style.background = "var(--their)";
+    const row = mkRow((mentionedG[g.id] ? "@ " : "") + g.name + (muted ? " 🔕" : ""), [], () => openGroup(g.id, true));
+    groupAv(row.children[0], g);
     if (grp === g.id || n) row.children[1].style.fontWeight = "700";
     if (n) { const b = document.createElement("span"); b.className = "bdg" + (muted ? " mut" : ""); b.style.display = "inline-block"; b.textContent = n > 99 ? "99+" : n; row.children[1].after(b); }
     box.appendChild(row);
   });
 }
 function markGroupRead(gid) {
-  unreadG[gid] = 0; paintBadges(); paintGroups();
+  delete mentionedG[gid]; unreadG[gid] = 0; paintBadges(); paintGroups();
   if (me) sb.from("group_reads").upsert({ user_id: me, group_id: gid, last_read: nowIso() }).then(() => {});
 }
 let gmrT = null;
@@ -1708,14 +1737,18 @@ async function openGroup(gid, user) {
   if (!dm && !grp && channel) markChanRead(channel);
   grp = gid; dm = null; seen = new Set(); ticks = {}; els = {}; rxs = {}; clearReply(); hideTyping(); resetPins(); applyChatSettings();
   document.querySelectorAll(".room").forEach(b => b.classList.remove("on"));
-  $("ttl").textContent = gname(gid); setHeadAv("👥", true); $("msgs").innerHTML = "";
+  $("ttl").textContent = gname(gid); setHeadAv("👥", true); groupAv($("hav"), groups.find(x => x.id === gid)); $("msgs").innerHTML = "";
   if (sub) { await sb.removeChannel(sub); sub = null; }
   markGroupRead(gid); paintFriends(); updateBar();
   const { data, error } = await sb.from("group_messages").select("*").eq("group_id", gid).order("created_at", { ascending: false }).limit(100);
   if (grp !== gid) return;
   if (error) { alert("Couldn’t load the group: " + error.message); return; }
-  (data || []).reverse().forEach(add); loadReactions();
+  (data || []).reverse().forEach(add); loadReactions(); loadPins();
   loadMembers(gid).then(() => { if (grp === gid) updateHeadSub(); });
+  gTypeCh = sb.channel("gtyping:" + gid).on("broadcast", { event: "typing" }, p => {
+    const f = p.payload && p.payload.from; if (f && f !== me && grp === gid && !blocked.has(f)) gTypingShow(f);
+  }).subscribe();
+  loadSeen();
 }
 async function gAct(fn, args, msg) {
   const { error } = await sb.rpc(fn, args);
@@ -1725,6 +1758,7 @@ async function gAct(fn, args, msg) {
 function paintGroupInfo() {
   const gid = grp; if (!gid) return;
   const admin = myRole(gid) === "admin";
+  groupAv($("giAv"), groups.find(x => x.id === gid)); $("giPic").style.display = admin ? "block" : "none";
   $("giName").value = gname(gid); $("giName").disabled = !admin;
   $("giRename").style.display = admin ? "block" : "none"; $("giAdd").style.display = admin ? "block" : "none";
   const list = gmem[gid] || []; $("giCount").textContent = list.length + " member" + (list.length === 1 ? "" : "s");
@@ -1847,7 +1881,7 @@ async function showStory() {
   const mine = x.user_id === me, av = $("svAv");
   av.textContent = (Array.from(dn(x.user_id))[0] || "?").toUpperCase(); av.style.backgroundImage = ""; setAv(av, x.user_id); av.onclick = null; av.style.cursor = "";
   $("svName").textContent = mine ? "Your story" : dn(x.user_id); $("svTime").textContent = ago(x.created_at);
-  $("svDel").style.display = mine ? "inline-block" : "none"; $("svViews").style.display = mine ? "inline-block" : "none"; $("svViews").textContent = "";
+  $("svDel").style.display = mine ? "inline-block" : "none"; $("svRep").style.display = mine ? "none" : "inline-block"; $("svViews").style.display = mine ? "inline-block" : "none"; $("svViews").textContent = "";
   const body = $("svBody"); body.innerHTML = ""; body.style.background = x.kind === "mood" ? (/^#[0-9a-fA-F]{6}$/.test(x.bg || "") ? x.bg : "#6c4cf5") : "#000";
   if (x.kind === "mood") {
     if (x.mood) { const e = document.createElement("div"); e.style.fontSize = "84px"; e.textContent = x.mood; body.appendChild(e); }
@@ -1984,6 +2018,98 @@ $("pushBtn").onclick = async () => {
   } catch (e) { alert("Couldn’t turn on notifications: " + (e.message || e)); }
   paintPush();
 };
+
+/* ================= group extras: picture, @mentions, typing, seen-by ================= */
+let gTypeCh = null, gTyping = {}, gTypeLast = 0, gSeen = {}, seenTimer = null, pendingMentions = new Map(), mentionedG = {};
+const mentionNames = m => (m.mentions || []).map(id => (names[id] || "").toLowerCase()).filter(Boolean);
+
+function groupAv(el, g) {
+  if (!el) return;
+  el.style.backgroundImage = ""; el.textContent = "👥"; el.style.background = "var(--their)";
+  if (g && g.avatar_path) { el.textContent = ""; el.style.backgroundImage = 'url("' + encodeURI(avUrl(g.avatar_path)) + '")'; el.style.backgroundSize = "cover"; el.style.backgroundPosition = "center"; }
+}
+$("giPic").onclick = () => $("giFile").click();
+$("giFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f || !grp) return;
+  const gid = grp;
+  try {
+    const img = await createImageBitmap(f, { imageOrientation: "from-image" });
+    const size = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = c.height = 256;
+    c.getContext("2d").drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, 256, 256);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    const path = me + "/group-" + gid + "-" + Date.now() + ".jpg", old = (groups.find(x => x.id === gid) || {}).avatar_path;
+    const up = await sb.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" }); if (up.error) throw up.error;
+    const { error } = await sb.rpc("set_group_avatar", { p_group: gid, p_path: path }); if (error) throw error;
+    if (old && old.startsWith(me + "/")) sb.storage.from("avatars").remove([old]);
+    await loadGroups(); paintGroupInfo(); if (grp === gid) groupAv($("hav"), groups.find(x => x.id === gid));
+  } catch (err) { alert("Couldn’t change the group picture: " + (err.message || err)); }
+};
+
+/* @mentions */
+const escRe = x => x.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+function mentionIds(text) {
+  return [...pendingMentions].filter(([name]) => new RegExp("(^|\\s)@" + escRe(name) + "(?![A-Za-z0-9_.-])", "i").test(text)).map(([, id]) => id);
+}
+function hideMentions() { $("mbox").style.display = "none"; $("mbox").innerHTML = ""; }
+function onMentionInput() {
+  if (!grp) { hideMentions(); return; }
+  const i = $("txt"), before = i.value.slice(0, i.selectionStart ?? i.value.length);
+  const m = /(^|\s)@([A-Za-z0-9_.-]{0,24})$/.exec(before);
+  if (!m) { hideMentions(); return; }
+  const q = m[2].toLowerCase();
+  const cand = (gmem[grp] || []).map(x => x.user_id).filter(id => id !== me && (names[id] || "").toLowerCase().startsWith(q)).slice(0, 6);
+  const box = $("mbox"); box.innerHTML = "";
+  if (!cand.length) { box.style.display = "none"; return; }
+  cand.forEach(id => {
+    const b = document.createElement("button"); b.type = "button";
+    const av = document.createElement("span"); av.className = "av"; av.style.cssText = "width:28px;height:28px;font-size:13px;margin:0";
+    av.textContent = (Array.from(names[id] || "?")[0] || "?").toUpperCase(); setAv(av, id); av.onclick = null; av.style.cursor = "";
+    const t = document.createElement("span"); t.textContent = "@" + names[id] + (nick[id] ? " (" + nick[id] + ")" : "");
+    b.append(av, t);
+    b.onmousedown = e => e.preventDefault();
+    b.onclick = () => {
+      const start = before.length - m[2].length - 1, ins = "@" + names[id] + " ", end = i.selectionStart ?? before.length;
+      i.value = i.value.slice(0, start) + ins + i.value.slice(end);
+      const pos = start + ins.length; i.focus(); i.setSelectionRange(pos, pos);
+      pendingMentions.set(names[id], id); hideMentions();
+    };
+    box.appendChild(b);
+  });
+  box.style.display = "flex";
+}
+$("txt").addEventListener("input", onMentionInput);
+
+/* typing in groups */
+function gTypingPaint() {
+  const list = Object.keys(gTyping).map(dn), t = $("typing");
+  if (!list.length) { t.style.display = "none"; return; }
+  t.textContent = list.length === 1 ? list[0] + " is typing…" : list.length === 2 ? list[0] + " and " + list[1] + " are typing…" : "Several people are typing…";
+  t.style.display = "block";
+}
+function gTypingShow(f) { clearTimeout(gTyping[f]); gTyping[f] = setTimeout(() => { delete gTyping[f]; gTypingPaint(); }, 3500); gTypingPaint(); }
+function gTypingClear(f) { if (gTyping[f] !== undefined) { clearTimeout(gTyping[f]); delete gTyping[f]; gTypingPaint(); } }
+
+/* "seen by" in groups */
+async function loadSeen() {
+  if (!grp) return; const gid = grp;
+  const { data } = await sb.rpc("group_seen", { p_group: gid });
+  if (grp !== gid) return;
+  gSeen = {}; (data || []).forEach(r => { gSeen[r.user_id] = r.last_read; });
+  paintSeen();
+  if (!seenTimer) seenTimer = setInterval(() => { if (grp && document.visibilityState === "visible") loadSeen(); }, 15000);
+}
+function paintSeen() {
+  if (!grp) return;
+  const mine = Object.values(els).filter(e => e.m.user_id === me && e.m.group_id && e.mw);
+  mine.forEach(e => { const sp = e.mw.querySelector(".seenby"); if (sp) sp.textContent = ""; });
+  if (!mine.length) return;
+  const last = mine.reduce((a, b) => (b.m.id > a.m.id ? b : a)), sp = last.mw.querySelector(".seenby"); if (!sp) return;
+  const readers = Object.entries(gSeen).filter(([, t]) => new Date(t) >= new Date(last.m.created_at)).map(([u]) => u);
+  const total = Math.max(0, (gmem[grp] || []).length - 1);
+  sp.textContent = !readers.length ? "· Sent"
+    : readers.length <= 3 ? "· 👁 Seen by " + readers.map(dn).join(", ") + (total && readers.length >= total ? " (everyone)" : "")
+    : "· 👁 Seen by " + readers.length + " of " + total;
+}
 
 $("send").onclick = send;
 $("txt").addEventListener("keydown", e => { if (e.key === "Enter" && effEnter()) send(); });
