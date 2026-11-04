@@ -12,3 +12,8 @@ window.GIPHY_KEY = "WtvJZPXiHMJ6sC2hju3g7IPKclQ0PoEF";
 
 // ---- Push notifications: paste your VAPID PUBLIC key (from vapid-keys.html) between the quotes ----
 window.VAPID_PUBLIC_KEY = "BCOOwco_6KdpDVUkz3oHCzGB_zmuaQwRRBHMuFKHanU55AdOEh8TCulg3Vx2xp8d6VNJgOD2myUvZ4_LrglPAOE";
+
+// ---- Optional: makes calls work on strict networks / mobile data. Get FREE relay details at metered.ca (Open Relay),
+// ---- then paste them like this (remove the two // at the start of each line):
+// window.ICE_SERVERS = [{ urls: "turn:YOUR-RELAY-HOST:443", username: "YOUR-USERNAME", credential: "YOUR-PASSWORD" }];
+window.ICE_SERVERS = [];

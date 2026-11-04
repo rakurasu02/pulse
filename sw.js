@@ -18,6 +18,8 @@ self.addEventListener("push", (e) => {
       tag: d.tag || undefined,
       renotify: !!d.tag,
       data: { open: d.open || "" },
+      requireInteraction: d.kind === "call",
+      vibrate: d.kind === "call" ? [300, 150, 300, 150, 300] : undefined,
     });
   })());
 });
