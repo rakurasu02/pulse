@@ -137,6 +137,18 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #incUI{display:none;position:fixed;inset:0;z-index:85;background:rgba(13,11,22,.97);color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:12px}
 #incUI .av{width:120px;height:120px;font-size:48px;margin:0}
 #incBtns{display:flex;gap:30px;margin-top:30px}#incBtns button{border:0;border-radius:32px;padding:16px 26px;font-size:18px;color:#fff;cursor:pointer}#incNo{background:#e5484d}#incYes{background:#2fa84f}
+#gcbar{display:none;align-items:center;gap:8px;padding:8px 16px;background:#2fa84f;color:#fff;font-size:14px}
+#gcbar button{border:0;border-radius:14px;padding:5px 16px;background:#fff;color:#1d6b33;font:inherit;font-weight:700;cursor:pointer}
+#gcbar button:disabled{opacity:.6}
+#gcUI{display:none;position:fixed;inset:0;z-index:80;background:#0d0b16;color:#fff;flex-direction:column}
+#gcTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 8px}
+#gcGrid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));grid-auto-rows:minmax(150px,1fr);gap:6px;padding:6px;overflow:auto}
+.tile{position:relative;background:#1d1a2d;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.tile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile .av{position:relative}.tile .tl{position:absolute;left:8px;bottom:6px;font-size:13px;text-shadow:0 1px 4px #000}
+#gcBtns{display:flex;gap:16px;justify-content:center;padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 22px)}
+#gcBtns button{width:58px;height:58px;border-radius:50%;border:0;font-size:24px;cursor:pointer;background:#ffffff30;color:#fff}
+#gcBtns button.off{background:#fff;color:#000}#gcBtns #gEnd{background:#e5484d}
 .fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
 .rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .rq b{display:block;font-size:12px}
@@ -258,7 +270,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     </div>
   </nav>
   <section id="main">
-    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="vcall" title="Voice call">📞</button><button id="xcall" title="Video call">🎥</button><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Chat settings">⚙️</button></span></div><div id="pinbar"></div><div id="msgs"></div>
+    <div id="head"><span><button id="back" title="Back">‹</button><span class="av" id="hav"></span><span class="ht"><span id="ttl"></span><small id="hsub"></small></span></span><span><button id="vcall" title="Voice call">📞</button><button id="xcall" title="Video call">🎥</button><button id="srch" title="Search in this chat">🔍</button><button id="more" title="More">⋯</button><button id="gear" title="Chat settings">⚙️</button></span></div><div id="pinbar"></div><div id="gcbar"></div><div id="msgs"></div>
     <div id="typing"></div>
     <div id="dmbar"></div>
     <div id="mbox"></div>
@@ -287,6 +299,15 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="sDnd">Do not disturb</label><select id="sDnd"><option value="keep">Choose…</option><option value="off">Off</option><option value="1">For 1 hour</option><option value="8">For 8 hours</option><option value="inf">Until I turn it off</option></select></div>
   <div class="sub" id="sDndNote"></div>
   <div class="srow"><label for="sMood">Default mood</label><select id="sMood"><option>😊</option><option>😂</option><option>😍</option><option>😢</option><option>😡</option><option>🔥</option></select></div>
+  <div class="sec">Sounds</div>
+  <div class="srow"><label for="sTone">Message sound</label><select id="sTone"></select></div>
+  <div class="srow"><label for="sRing">Ringtone</label><select id="sRing"></select></div>
+  <button class="bt wide" id="sPrev">▶ Preview message sound</button>
+  <button class="bt wide" id="sPrevRing">▶ Preview ringtone</button>
+  <button class="bt wide" id="sPickMsg">🎵 Use my own message sound…</button>
+  <button class="bt wide" id="sPickRing">🎵 Use my own ringtone…</button>
+  <input type="file" id="sSndFile" accept="audio/*" hidden>
+  <div class="sub" id="sSndNote" style="padding:0 0 6px">Saved on this device. A notification that arrives while Pulse is closed uses your phone’s own sound.</div>
   <div class="sec">Notifications on this device</div>
   <div class="sub" id="pushNote" style="padding:0 0 6px"></div>
   <button class="bt wide" id="pushBtn" style="display:none">Turn on notifications on this device</button>
@@ -307,6 +328,7 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="sec">Notifications</div>
   <div class="srow"><label for="csMute">Mute this chat</label><input type="checkbox" id="csMute"></div>
   <div class="srow"><label for="csSound">Sound</label><select id="csSound"><option value="default">Use my default</option><option value="on">Always on</option><option value="off">Off</option></select></div>
+  <div class="srow"><label for="csTone">Sound for this chat</label><select id="csTone"></select></div>
   <div class="sec">Appearance</div>
   <div class="srow"><label>Chat color</label><span id="csColors" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></span></div>
   <div class="srow"><label for="csSize">Text size</label><select id="csSize"><option value="default">Use my default</option><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
@@ -374,6 +396,8 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
     <input type="text" id="snCap" maxlength="200" placeholder="Caption (optional)" style="margin-top:8px"></div>
   <div class="sub" style="padding:0">Your friends can see it for 24 hours.</div>
   <button class="bt pri" id="snPost">Post story</button><button class="bt" id="snCancel">Cancel</button></div></div>
+<div id="gcUI"><div id="gcTop"><b id="gcTitle"></b><span id="gcStat"></span></div><div id="gcGrid"></div>
+  <div id="gcBtns"><button id="gMute" title="Mute">🎤</button><button id="gCam" title="Camera on/off">📷</button><button id="gFlip" title="Flip camera">🔄</button><button id="gEnd" title="Leave call">📵</button></div></div>
 <div id="callUI"><video id="callRemote" autoplay playsinline></video>
   <div id="callInfo"><span class="av" id="callAv"></span><b id="callName" style="font-size:22px"></b><div id="callStat"></div></div>
   <video id="callLocal" autoplay playsinline muted></video>
@@ -435,11 +459,7 @@ async function saveS() {
   const { error } = await sb.from("settings").upsert({ user_id: me, theme: S.theme, text_size: S.size, enter_to_send: S.enter, sound: S.sound, mood: S.mood, muted: S.muted, dnd_until: S.dndUntil });
   if (error) alert("Couldn’t save settings: " + error.message);
 }
-function beep() {
-  try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain();
-    o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .05; o.start(); o.stop(c.currentTime + .12); } catch (e) {}
-}
-$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you") + (myFull ? " (" + myFull + ")" : ""); $("set").style.display = "flex"; paintBlocked(); fillProfileForm(); };
+$("gear").onclick = () => { $("sMe").textContent = "Signed in as " + (names[me] || "you") + (myFull ? " (" + myFull + ")" : ""); $("set").style.display = "flex"; paintBlocked(); fillProfileForm(); fillSoundSettings(); };
 $("gear2").onclick = $("gear").onclick;
 $("sx").onclick = () => { $("set").style.display = "none"; };
 $("set").onclick = e => { if (e.target === $("set")) $("set").style.display = "none"; };
@@ -563,7 +583,7 @@ async function openChannel(c, user) {
   loadReactions(); loadPins();
   sub = sb.channel("room-" + c).on("postgres_changes",
     { event: "INSERT", schema: "public", table: "messages", filter: "channel=eq." + c },
-    async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && shouldBeep("ch:" + c)) beep(); add(p.new); }).subscribe();
+    async p => { if (!names[p.new.user_id]) await loadNames(); if (p.new.user_id !== me && shouldBeep("ch:" + c)) beep("ch:" + c); add(p.new); }).subscribe();
 }
 
 function paintTick(el, m) {
@@ -706,7 +726,7 @@ async function ensureConn(uid) {
 function updateBar() {
   const bar = $("dmbar"), comp = $("bar");
   $("more").style.display = "block"; updateHeadSub();
-  { const canCall = !!dm && connOf(dm) === "ok" && !!(navigator.mediaDevices && window.RTCPeerConnection); $("vcall").style.display = canCall ? "block" : "none"; $("xcall").style.display = canCall ? "block" : "none"; }
+  { const canCall = ((!!dm && connOf(dm) === "ok") || !!grp) && !!(navigator.mediaDevices && window.RTCPeerConnection); $("vcall").style.display = canCall ? "block" : "none"; $("xcall").style.display = canCall ? "block" : "none"; }
   if (!dm) { bar.style.display = "none"; comp.style.display = "flex"; return; }
   const c = connOf(dm), q = mr.find(r => r.sender_id === dm || r.recipient_id === dm);
   const nm = dn(dm);
@@ -787,7 +807,7 @@ async function subscribeDM() {
       if (!names[m.sender_id]) await loadNames();
       if (connOf(m.sender_id) === "none") await loadFriends();
       if (dm === m.sender_id) { add({ ...m, user_id: m.sender_id }); hideTyping(); } else { unread.add(m.sender_id); unreadDM[m.sender_id] = (unreadDM[m.sender_id] || 0) + 1; paintBadges(); }
-      if (connOf(m.sender_id) === "ok" && shouldBeep("dm:" + m.sender_id)) beep();
+      if (connOf(m.sender_id) === "ok" && shouldBeep("dm:" + m.sender_id)) beep("dm:" + m.sender_id);
       paintFriends();
       markAllDelivered();
       if (dm === m.sender_id) markIncoming(m.sender_id);
@@ -1056,7 +1076,7 @@ async function subscribeEdits() {
       const m = p.new; if (m.user_id === me || blocked.has(m.user_id)) return;
       if (!dm && !grp && channel === m.channel) { markChanReadSoon(); return; }
       unreadCh[m.channel] = (unreadCh[m.channel] || 0) + 1; paintBadges();
-      if (shouldBeep("ch:" + m.channel)) beep();
+      if (shouldBeep("ch:" + m.channel)) beep("ch:" + m.channel);
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, p => { if (!dm && !grp) applyEdit(p.new); })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, p => { if (!dm && !grp) removeEl(p.old.id); })
@@ -1072,7 +1092,7 @@ async function subscribeEdits() {
       if (grp === m.group_id) { add(m); gTypingClear(m.user_id); markGroupReadSoon(); return; }
       const tagged = (m.mentions || []).includes(me); if (tagged) mentionedG[m.group_id] = true;
       unreadG[m.group_id] = (unreadG[m.group_id] || 0) + 1; paintBadges(); paintGroups();
-      if (tagged ? (!dndOn() && S.sound) : shouldBeep("gr:" + m.group_id)) beep();
+      if (tagged ? (!dndOn() && S.sound) : shouldBeep("gr:" + m.group_id)) beep("gr:" + m.group_id);
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "group_messages" }, p => { if (grp) applyEdit(p.new); })
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "group_messages" }, p => { if (grp) removeEl(p.old.id); })
@@ -1085,6 +1105,7 @@ async function subscribeEdits() {
 function hideTyping() {
   clearTimeout(typeTimer); $("typing").style.display = "none";
   Object.values(gTyping).forEach(clearTimeout); gTyping = {};
+  if (!gcState) { dropViewer(); gcActive = null; $("gcbar").style.display = "none"; }
   if (gTypeCh) { sb.removeChannel(gTypeCh); gTypeCh = null; }
 }
 function showTyping(from) {
@@ -1664,7 +1685,7 @@ function openChatSettings() {
   if (!ch) setAv(av, dm); av.onclick = null; av.style.cursor = "";
   $("csDm").style.display = ch ? "none" : "block"; $("csSafe").style.display = ch ? "none" : "block";
   $("csMute").checked = S.muted.includes(key); $("csSound").value = cs.sound || "default"; $("csSize").value = cs.size || "default";
-  $("csEnter").value = cs.enter || "default"; $("csMood").value = cs.mood || "default"; paintSwatches(cs.color);
+  $("csEnter").value = cs.enter || "default"; $("csMood").value = cs.mood || "default"; $("csTone").value = cs.tone || "default"; paintSwatches(cs.color);
   if (grp) {
     $("shName").textContent = gname(grp); $("csSub").textContent = "Group"; av.textContent = "👥"; av.style.background = "var(--their)"; av.style.color = "var(--accent)"; groupAv(av, groups.find(x => x.id === grp));
     $("csDm").style.display = "none"; $("csSafe").style.display = "none";
@@ -1770,7 +1791,7 @@ async function openGroup(gid, user) {
   gTypeCh = sb.channel("gtyping:" + gid).on("broadcast", { event: "typing" }, p => {
     const f = p.payload && p.payload.from; if (f && f !== me && grp === gid && !blocked.has(f)) gTypingShow(f);
   }).subscribe();
-  loadSeen();
+  loadSeen(); loadGroupCall();
 }
 async function gAct(fn, args, msg) {
   const { error } = await sb.rpc(fn, args);
@@ -2137,19 +2158,6 @@ function paintSeen() {
 let callState = null, incState = null, callsSub = null, ringIv = null, ringCtx = null, callTimer = null, ringTimeout = null, incTimeout = null;
 const iceConfig = () => ({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }, ...(Array.isArray(window.ICE_SERVERS) ? window.ICE_SERVERS : [])] });
 const mmss = sec => Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
-function ring(on, incoming) {
-  clearInterval(ringIv); ringIv = null; if (navigator.vibrate) navigator.vibrate(0);
-  if (!on) return;
-  const tick = () => {
-    try {
-      ringCtx = ringCtx || new (window.AudioContext || window.webkitAudioContext)(); if (ringCtx.resume) ringCtx.resume();
-      const o = ringCtx.createOscillator(), g = ringCtx.createGain(); o.connect(g); g.connect(ringCtx.destination);
-      o.frequency.value = incoming ? 880 : 440; g.gain.value = 0.08; o.start(); o.stop(ringCtx.currentTime + 0.35);
-      if (incoming && navigator.vibrate) navigator.vibrate(300);
-    } catch (e) {}
-  };
-  tick(); ringIv = setInterval(tick, 1500);
-}
 const setCallStat = t => { $("callStat").textContent = t; };
 function mediaFor(kind) { return navigator.mediaDevices.getUserMedia({ audio: true, video: kind === "video" ? { facingMode: "user" } : false }); }
 function peerAvatar(el, id) { el.textContent = (Array.from(dn(id))[0] || "?").toUpperCase(); el.style.backgroundImage = ""; setAv(el, id); el.onclick = null; el.style.cursor = ""; }
@@ -2164,8 +2172,9 @@ function openCallUI(stat) {
 }
 
 async function startCall(kind) {
+  if (grp) { startGroupCall(kind); return; }
   if (!dm || connOf(dm) !== "ok") return;
-  if (callState || incState) { alert("You’re already in a call."); return; }
+  if (callState || incState || gcState) { alert("You’re already in a call."); return; }
   const peer = dm; let stream;
   try { stream = await mediaFor(kind); }
   catch (e) { alert("Couldn’t use your microphone" + (kind === "video" ? " or camera" : "") + ". Check your browser permissions and try again."); return; }
@@ -2248,7 +2257,7 @@ async function endCall(how) {
 function onIncoming(row) {
   if (!row || row.status !== "ringing" || row.callee_id !== me || blocked.has(row.caller_id)) return;
   if (Date.now() - new Date(row.created_at).getTime() > 50000) return;
-  if (callState || incState) { sb.from("calls").update({ status: "declined" }).eq("id", row.id).then(() => {}); return; }
+  if (callState || incState || gcState) { sb.from("calls").update({ status: "declined" }).eq("id", row.id).then(() => {}); return; }
   if (dndOn()) return;
   incState = row; peerAvatar($("incAv"), row.caller_id);
   $("incName").textContent = dn(row.caller_id); $("incKind").textContent = row.kind === "video" ? "📹 Video call" : "📞 Voice call";
@@ -2289,6 +2298,8 @@ async function subscribeCalls() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "calls", filter: "callee_id=eq." + me }, p => onIncoming(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls", filter: "callee_id=eq." + me }, p => onCallUpdate(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls", filter: "caller_id=eq." + me }, p => onCallUpdate(p.new))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_calls" }, p => { if (grp === p.new.group_id && !gcState) setGroupCallRow(p.new); })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "group_calls" }, p => { if (gcActive && gcActive.id === p.new.id && p.new.ended_at) setGroupCallRow(null); })
     .subscribe();
 }
 
@@ -2314,6 +2325,216 @@ $("cFlip").onclick = async () => {
     const sender = c.pc && c.pc.getSenders().find(x => x.track && x.track.kind === "video"); if (sender) await sender.replaceTrack(nt);
     c.local.getVideoTracks().forEach(t => { t.stop(); c.local.removeTrack(t); }); c.local.addTrack(nt); c.facing = next;
     $("callLocal").srcObject = c.local; $("callLocal").style.transform = next === "user" ? "scaleX(-1)" : "none";
+  } catch (e) { alert("Couldn’t switch the camera."); }
+};
+
+/* ================= notification sounds (your own, saved on this device) ================= */
+const TONES = [["chime", "Pulse chime"], ["bubble", "Bubble"], ["ding", "Ding"], ["marimba", "Marimba"], ["soft", "Soft"], ["custom", "My own sound file"]];
+const RINGS = [["classic", "Classic"], ["melody", "Pulse melody"], ["custom", "My own ringtone"]];
+let ringAudio = null, pickSlot = "msg";
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+const toneDefault = () => lsGet("pulse_tone") || "chime";
+const ringChoice = () => lsGet("pulse_ring") || "classic";
+function toneFor(key) { const t = (CS[key] || {}).tone; return t && t !== "default" ? t : toneDefault(); }
+function audioCtx() { ringCtx = ringCtx || new (window.AudioContext || window.webkitAudioContext)(); if (ringCtx.resume) ringCtx.resume(); return ringCtx; }
+function nt(c, freq, t0, dur, type, vol, slideTo) {
+  const o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || 0.12, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function playTone(name) {
+  try {
+    if (name === "custom") { const u = lsGet("pulse_custom_msg"); if (u) { new Audio(u).play().catch(() => {}); return; } name = "chime"; }
+    const c = audioCtx(), t = c.currentTime;
+    if (name === "bubble") nt(c, 420, t, 0.18, "sine", 0.16, 980);
+    else if (name === "ding") { nt(c, 1318, t, 0.9, "sine", 0.14); nt(c, 2637, t, 0.5, "sine", 0.05); }
+    else if (name === "marimba") { nt(c, 523, t, 0.22, "triangle", 0.16); nt(c, 659, t + 0.12, 0.22, "triangle", 0.16); nt(c, 784, t + 0.24, 0.3, "triangle", 0.16); }
+    else if (name === "soft") nt(c, 392, t, 0.7, "triangle", 0.1);
+    else { nt(c, 659, t, 0.25, "sine", 0.14); nt(c, 988, t + 0.14, 0.45, "sine", 0.14); }
+  } catch (e) {}
+}
+function beep(key) { playTone(key ? toneFor(key) : toneDefault()); }
+function ring(on, incoming) {
+  clearInterval(ringIv); ringIv = null; if (ringAudio) { ringAudio.pause(); ringAudio = null; } if (navigator.vibrate) navigator.vibrate(0);
+  if (!on) return;
+  const choice = incoming ? ringChoice() : "classic";
+  if (choice === "custom") {
+    const u = lsGet("pulse_custom_ring");
+    if (u) { ringAudio = new Audio(u); ringAudio.loop = true; ringAudio.play().catch(() => {}); if (incoming && navigator.vibrate) navigator.vibrate([300, 200, 300]); return; }
+  }
+  const tick = () => {
+    try {
+      const c = audioCtx(), t = c.currentTime;
+      if (choice === "melody") [523, 659, 784, 1046].forEach((f, i) => nt(c, f, t + i * 0.16, 0.25, "triangle", 0.14));
+      else nt(c, incoming ? 880 : 440, t, 0.35, "sine", 0.1);
+      if (incoming && navigator.vibrate) navigator.vibrate(300);
+    } catch (e) {}
+  };
+  tick(); ringIv = setInterval(tick, choice === "melody" ? 2200 : 1500);
+}
+function fillOptions(sel, list, withDefault) {
+  sel.innerHTML = ""; if (withDefault) { const o = document.createElement("option"); o.value = "default"; o.textContent = "Use my default"; sel.appendChild(o); }
+  list.forEach(([v, l]) => { const o = document.createElement("option"); o.value = v; o.textContent = l; sel.appendChild(o); });
+}
+fillOptions($("sTone"), TONES); fillOptions($("sRing"), RINGS); fillOptions($("csTone"), TONES, true);
+function fillSoundSettings() { $("sTone").value = toneDefault(); $("sRing").value = ringChoice(); }
+$("sTone").onchange = e => { lsSet("pulse_tone", e.target.value); playTone(e.target.value); };
+$("sRing").onchange = e => { lsSet("pulse_ring", e.target.value); $("sPrevRing").onclick(); };
+$("csTone").onchange = e => { csSet({ tone: e.target.value }); if (e.target.value !== "default") playTone(e.target.value); };
+$("sPrev").onclick = () => playTone(toneDefault());
+$("sPrevRing").onclick = () => { ring(true, true); setTimeout(() => ring(false), 2600); };
+$("sPickMsg").onclick = () => { pickSlot = "msg"; $("sSndFile").click(); };
+$("sPickRing").onclick = () => { pickSlot = "ring"; $("sSndFile").click(); };
+$("sSndFile").onchange = e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (!/^audio\//.test(f.type)) { alert("Please choose a sound file (MP3, WAV, M4A or OGG)."); return; }
+  if (f.size > 400 * 1024) { alert("That file is too big. Choose a short clip under 400 KB."); return; }
+  const r = new FileReader();
+  r.onload = () => {
+    if (!lsSet("pulse_custom_" + pickSlot, r.result)) { alert("Couldn’t save that sound on this device. Try a smaller file."); return; }
+    if (pickSlot === "msg") { lsSet("pulse_tone", "custom"); $("sTone").value = "custom"; playTone("custom"); }
+    else { lsSet("pulse_ring", "custom"); $("sRing").value = "custom"; $("sPrevRing").onclick(); }
+  };
+  r.readAsDataURL(f);
+};
+
+/* ================= group calls (voice or video, up to 4 people) ================= */
+let gcState = null, gcActive = null, gcViewCh = null, gcSynced = false;
+const gcCount = () => { try { return gcViewCh ? Object.keys(gcViewCh.presenceState()).length : 0; } catch (e) { return 0; } };
+function dropViewer() { if (gcViewCh) { try { sb.removeChannel(gcViewCh); } catch (e) {} gcViewCh = null; } gcSynced = false; }
+function setGroupCallRow(row) {
+  dropViewer(); gcActive = row || null;
+  if (!row || gcState) { $("gcbar").style.display = "none"; return; }
+  gcViewCh = sb.channel("gcp-" + row.room).on("presence", { event: "sync" }, () => { gcSynced = true; paintGcBar(); }).subscribe();
+}
+function paintGcBar() {
+  const row = gcActive, bar = $("gcbar"); if (!row || gcState || !gcSynced) { if (!row || gcState) bar.style.display = "none"; return; }
+  const n = gcCount();
+  if (n === 0 && Date.now() - new Date(row.created_at).getTime() > 90000) { sb.from("group_calls").update({ ended_at: nowIso() }).eq("id", row.id).then(() => {}); setGroupCallRow(null); return; }
+  bar.innerHTML = ""; const sp = document.createElement("span"); sp.style.flex = "1";
+  sp.textContent = (row.kind === "video" ? "🎥" : "📞") + " Group call in progress · " + n + " in the call";
+  const b = mkBtn(n >= 4 ? "Full" : "Join", joinFromBar); b.disabled = n >= 4; bar.append(sp, b); bar.style.display = "flex";
+}
+async function loadGroupCall() {
+  setGroupCallRow(null); if (!grp) return; const gid = grp;
+  const { data } = await sb.from("group_calls").select("*").eq("group_id", gid).is("ended_at", null).gt("created_at", new Date(Date.now() - 8 * 3600e3).toISOString()).order("created_at", { ascending: false }).limit(1);
+  if (grp !== gid) return; setGroupCallRow(data && data[0]);
+}
+async function joinFromBar() {
+  const row = gcActive; if (!row || gcState || callState || incState) return;
+  if (gcCount() >= 4) { alert("This call is full (4 people)."); return; }
+  let stream; try { stream = await mediaFor(row.kind); } catch (e) { alert("Couldn’t use your microphone" + (row.kind === "video" ? " or camera" : "") + ". Check your browser permissions."); return; }
+  joinGroupCall(row, stream);
+}
+async function startGroupCall(kind) {
+  if (!grp || gcState || callState || incState) { alert("You’re already in a call."); return; }
+  const stale = gcActive && gcSynced && gcCount() === 0 && Date.now() - new Date(gcActive.created_at).getTime() > 90000;
+  if (gcActive && !stale) { joinFromBar(); return; }
+  let stream; try { stream = await mediaFor(kind); } catch (e) { alert("Couldn’t use your microphone" + (kind === "video" ? " or camera" : "") + ". Check your browser permissions."); return; }
+  if (gcActive) await sb.from("group_calls").update({ ended_at: nowIso() }).eq("id", gcActive.id);
+  const gid = grp, { data, error } = await sb.from("group_calls").insert({ group_id: gid, kind }).select().single();
+  if (error) { stream.getTracks().forEach(t => t.stop()); alert("Couldn’t start the call: " + error.message); return; }
+  sb.from("group_messages").insert({ group_id: gid, text: kind === "video" ? "🎥 Group video call started" : "📞 Group voice call started", mood: "" }).select().single().then(r => { if (r.data && grp === gid) add(r.data); });
+  joinGroupCall(data, stream);
+}
+const peerCount = () => gcState ? Object.keys(gcState.peers).length : 0;
+function addTile(id, local) {
+  const el = document.createElement("div"); el.className = "tile";
+  const av = document.createElement("span"); av.className = "av"; av.style.cssText = "width:70px;height:70px;font-size:28px;margin:0"; peerAvatar(av, id);
+  const video = document.createElement("video"); video.autoplay = true; video.playsInline = true; video.muted = !!local;
+  if (local) video.style.transform = "scaleX(-1)";
+  video.style.opacity = local && gcState && gcState.kind === "video" ? "1" : "0";
+  const lb = document.createElement("div"); lb.className = "tl"; lb.textContent = local ? "You" : dn(id);
+  el.append(av, video, lb); $("gcGrid").appendChild(el); return { el, video };
+}
+function updateGcStat() {
+  const g = gcState; if (!g) return;
+  $("gcStat").textContent = (peerCount() + 1) + " in the call" + (g.started ? " · " + mmss(Math.floor((Date.now() - g.started) / 1000)) : "");
+}
+function joinGroupCall(row, stream) {
+  dropViewer(); $("gcbar").style.display = "none";
+  const g = gcState = { row, room: row.room, kind: row.kind, gid: row.group_id, local: stream, peers: {}, ch: null, pch: null, started: 0, facing: "user", timer: null };
+  $("gcTitle").textContent = gname(row.group_id); $("gcGrid").innerHTML = ""; g.localTile = addTile(me, true); g.localTile.video.srcObject = stream;
+  ["gMute", "gCam"].forEach(i => $(i).classList.remove("off")); $("gMute").textContent = "🎤"; $("gCam").textContent = "📷";
+  $("gCam").style.display = $("gFlip").style.display = row.kind === "video" ? "inline-block" : "none";
+  $("gcStat").textContent = "Connecting…"; $("gcUI").style.display = "flex";
+  g.pch = sb.channel("gcp-" + g.room, { config: { presence: { key: me } } }).subscribe(st => { if (st === "SUBSCRIBED") g.pch.track({ uid: me }); });
+  g.ch = sb.channel("gc-" + g.room)
+    .on("broadcast", { event: "hello" }, p => onGHello(p.payload))
+    .on("broadcast", { event: "hi" }, p => onGHi(p.payload))
+    .on("broadcast", { event: "offer" }, p => onGOffer(p.payload))
+    .on("broadcast", { event: "answer" }, p => onGAnswer(p.payload))
+    .on("broadcast", { event: "ice" }, p => onGIce(p.payload))
+    .on("broadcast", { event: "bye" }, p => removePeer(p.payload && p.payload.from))
+    .subscribe(st => { if (st === "SUBSCRIBED") g.ch.send({ type: "broadcast", event: "hello", payload: { from: me } }); });
+  g.timer = setInterval(updateGcStat, 1000); updateGcStat();
+}
+// the person with the larger id always makes the offer, so two people never offer to each other at once
+function onGHello(m) {
+  const g = gcState; if (!g || !m || m.from === me) return;
+  if (peerCount() >= 3 && !g.peers[m.from]) return;
+  g.ch.send({ type: "broadcast", event: "hi", payload: { from: me, to: m.from } });
+  if (me > m.from) connectPeer(m.from);
+}
+function onGHi(m) { const g = gcState; if (!g || !m || m.to !== me || m.from === me) return; if (me > m.from) connectPeer(m.from); }
+function newPeer(x) {
+  const g = gcState, pc = new RTCPeerConnection(iceConfig()), p = { id: x, pc, queue: [], tile: null }; g.peers[x] = p;
+  g.local.getTracks().forEach(t => pc.addTrack(t, g.local));
+  p.tile = addTile(x, false);
+  pc.ontrack = e => { p.tile.video.srcObject = e.streams[0]; if (g.kind === "video") p.tile.video.style.opacity = "1"; };
+  pc.onicecandidate = e => { if (e.candidate && g.ch) g.ch.send({ type: "broadcast", event: "ice", payload: { from: me, to: x, cand: e.candidate.toJSON() } }); };
+  pc.onconnectionstatechange = () => {
+    if (gcState !== g) return; const st = pc.connectionState;
+    if (st === "connected" && !g.started) { g.started = Date.now(); updateGcStat(); }
+    else if (st === "failed" || st === "closed") removePeer(x);
+  };
+  updateGcStat(); return p;
+}
+async function connectPeer(x) {
+  const g = gcState; if (!g || g.peers[x]) return; const p = newPeer(x);
+  const o = await p.pc.createOffer(); await p.pc.setLocalDescription(o);
+  g.ch.send({ type: "broadcast", event: "offer", payload: { from: me, to: x, sdp: o.sdp, type: o.type } });
+}
+async function flushG(p) { for (const c of p.queue.splice(0)) { try { await p.pc.addIceCandidate(c); } catch (e) {} } }
+async function onGOffer(m) {
+  const g = gcState; if (!g || !m || m.to !== me) return;
+  let p = g.peers[m.from]; if (!p) { if (peerCount() >= 3) return; p = newPeer(m.from); }
+  await p.pc.setRemoteDescription({ type: m.type, sdp: m.sdp }); await flushG(p);
+  const a = await p.pc.createAnswer(); await p.pc.setLocalDescription(a);
+  g.ch.send({ type: "broadcast", event: "answer", payload: { from: me, to: m.from, sdp: a.sdp, type: a.type } });
+}
+async function onGAnswer(m) { const g = gcState; if (!g || !m || m.to !== me) return; const p = g.peers[m.from]; if (!p) return; await p.pc.setRemoteDescription({ type: m.type, sdp: m.sdp }); await flushG(p); }
+async function onGIce(m) {
+  const g = gcState; if (!g || !m || m.to !== me) return; const p = g.peers[m.from]; if (!p) return;
+  if (p.pc.remoteDescription) { try { await p.pc.addIceCandidate(m.cand); } catch (e) {} } else p.queue.push(m.cand);
+}
+function removePeer(x) {
+  const g = gcState, p = g && g.peers[x]; if (!p) return;
+  try { p.pc.close(); } catch (e) {} if (p.tile && p.tile.el.remove) p.tile.el.remove(); delete g.peers[x]; updateGcStat();
+}
+async function leaveGroupCall() {
+  const g = gcState; if (!g) return; gcState = null;
+  const alone = Object.keys(g.peers).length === 0;
+  try { g.ch.send({ type: "broadcast", event: "bye", payload: { from: me } }); } catch (e) {}
+  clearInterval(g.timer); Object.values(g.peers).forEach(p => { try { p.pc.close(); } catch (e) {} });
+  g.local.getTracks().forEach(t => t.stop());
+  try { g.pch.untrack(); sb.removeChannel(g.pch); sb.removeChannel(g.ch); } catch (e) {}
+  $("gcUI").style.display = "none"; $("gcGrid").innerHTML = "";
+  if (alone) sb.from("group_calls").update({ ended_at: nowIso() }).eq("id", g.row.id).then(() => {});
+  if (grp === g.gid) loadGroupCall();
+}
+$("gEnd").onclick = leaveGroupCall;
+$("gMute").onclick = () => { const t = gcState && gcState.local.getAudioTracks()[0]; if (!t) return; t.enabled = !t.enabled; $("gMute").classList.toggle("off", !t.enabled); $("gMute").textContent = t.enabled ? "🎤" : "🔇"; };
+$("gCam").onclick = () => { const t = gcState && gcState.local.getVideoTracks()[0]; if (!t) return; t.enabled = !t.enabled; $("gCam").classList.toggle("off", !t.enabled); $("gCam").textContent = t.enabled ? "📷" : "🚫"; };
+$("gFlip").onclick = async () => {
+  const g = gcState; if (!g || g.kind !== "video") return; const next = g.facing === "user" ? "environment" : "user";
+  try {
+    const ns = await navigator.mediaDevices.getUserMedia({ video: { facingMode: next } }), nt2 = ns.getVideoTracks()[0];
+    for (const p of Object.values(g.peers)) { const sd = p.pc.getSenders().find(x => x.track && x.track.kind === "video"); if (sd) await sd.replaceTrack(nt2); }
+    g.local.getVideoTracks().forEach(t => { t.stop(); g.local.removeTrack(t); }); g.local.addTrack(nt2); g.facing = next;
+    g.localTile.video.srcObject = g.local; g.localTile.video.style.transform = next === "user" ? "scaleX(-1)" : "none";
   } catch (e) { alert("Couldn’t switch the camera."); }
 };
 
