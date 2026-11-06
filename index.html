@@ -149,6 +149,10 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
 #gcBtns{display:flex;gap:16px;justify-content:center;padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 22px)}
 #gcBtns button{width:58px;height:58px;border-radius:50%;border:0;font-size:24px;cursor:pointer;background:#ffffff30;color:#fff}
 #gcBtns button.off{background:#fff;color:#000}#gcBtns #gEnd{background:#e5484d}
+.ws{width:36px;height:36px;border-radius:9px;border:2px solid var(--line);cursor:pointer;padding:0;font-size:16px;color:var(--text);background:var(--bg)}
+.ws.on{outline:2px solid var(--text);outline-offset:1px}
+.has-wall .tm,.has-wall #empty{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.has-wall .mw .tm .rp{color:#fff}
 .fwd{font-size:12px;opacity:.75;font-style:italic;margin-bottom:2px}
 .rq{border-left:3px solid rgba(127,127,127,.8);background:rgba(127,127,127,.2);border-radius:8px;padding:4px 8px;margin-bottom:4px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .rq b{display:block;font-size:12px}
@@ -331,6 +335,9 @@ input,select{padding:11px 14px;border-radius:12px;border:1px solid var(--line);b
   <div class="srow"><label for="csTone">Sound for this chat</label><select id="csTone"></select></div>
   <div class="sec">Appearance</div>
   <div class="srow"><label>Chat color</label><span id="csColors" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></span></div>
+  <div class="srow" style="flex-direction:column;align-items:flex-start"><label>Wallpaper</label><div id="csWalls" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
+  <div class="srow"><label for="csDim">Darken wallpaper</label><select id="csDim"><option value="0">None</option><option value="20">Light</option><option value="40">Medium</option><option value="60">Strong</option></select></div>
+  <button class="bt wide" id="csThemeAll">Use this look for all my chats</button><input type="file" id="csWallFile" accept="image/*" hidden>
   <div class="srow"><label for="csSize">Text size</label><select id="csSize"><option value="default">Use my default</option><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></div>
   <div class="sec">Typing</div>
   <div class="srow"><label for="csEnter">Enter key sends</label><select id="csEnter"><option value="default">Use my default</option><option value="on">Yes</option><option value="off">No</option></select></div>
@@ -975,6 +982,7 @@ $("delGo").onclick = async () => {
     }
     if (prof[me] && prof[me].avatar_path) await sb.storage.from("avatars").remove([prof[me].avatar_path]);
     try { const { data: sf } = await sb.storage.from("stories").list(me, { limit: 100 }); if (sf && sf.length) await sb.storage.from("stories").remove(sf.map(f => me + "/" + f.name)); } catch (e) {}
+    try { const { data: wf } = await sb.storage.from("wallpapers").list(me, { limit: 100 }); if (wf && wf.length) await sb.storage.from("wallpapers").remove(wf.map(f => me + "/" + f.name)); } catch (e) {}
     const { error } = await sb.rpc("delete_my_account");
     if (error) throw error;
     $("del").style.display = "none"; $("set").style.display = "none";
@@ -1650,11 +1658,37 @@ const curKey = () => grp ? "gr:" + grp : dm ? "dm:" + dm : "ch:" + channel;
 const csGet = (k) => (CS[curKey()] || {})[k];
 const effEnter = () => { const v = csGet("enter"); return v === "on" ? true : v === "off" ? false : !!S.enter; };
 const COLORS = [["#6c4cf5", "Purple"], ["#2f7df6", "Blue"], ["#12a594", "Teal"], ["#2fa84f", "Green"], ["#e8832a", "Orange"], ["#e5469a", "Pink"], ["#e5484d", "Red"]];
+const WALLS = [
+  ["sunset", "Sunset", "linear-gradient(160deg,#ff9a8b,#ff6a88,#ff99ac)", false],
+  ["ocean", "Ocean", "linear-gradient(160deg,#2193b0,#6dd5ed)", false],
+  ["forest", "Forest", "linear-gradient(160deg,#134e5e,#71b280)", false],
+  ["night", "Night sky", "linear-gradient(160deg,#0f2027,#203a43,#2c5364)", false],
+  ["candy", "Candy", "linear-gradient(160deg,#f6d365,#fda085)", false],
+  ["paper", "Paper", "#f4efe6", true],
+  ["dots", "Dots", "radial-gradient(rgba(127,127,127,.28) 1.3px, transparent 1.3px) 0 0/18px 18px", true]
+];
+let wallTok = 0; const wallCache = {};
+async function wallUrl(path) {
+  if (wallCache[path]) return wallCache[path];
+  const { data } = await sb.storage.from("wallpapers").createSignedUrl(path, 3600);
+  return data ? (wallCache[path] = data.signedUrl) : null;
+}
+async function applyWall(wall, path, dim) {
+  const m = $("msgs"), tok = ++wallTok, a = Math.max(0, Math.min(0.8, (Number(dim) || 0) / 100));
+  const shade = a ? "linear-gradient(rgba(0,0,0," + a + "),rgba(0,0,0," + a + ")), " : "";
+  if (wall === "custom" && path) {
+    const u = await wallUrl(path); if (tok !== wallTok) return;
+    m.style.background = u ? shade + 'url("' + u + '") center/cover' : ""; m.classList.toggle("has-wall", !!u); return;
+  }
+  const w = WALLS.find(x => x[0] === wall);
+  m.style.background = w ? shade + w[2] : ""; m.classList.toggle("has-wall", !!w && (!w[3] || a > 0));
+}
 function applyChatSettings() {
-  const cs = CS[curKey()] || {};
-  $("main").style.setProperty("--accent", /^#[0-9a-fA-F]{6}$/.test(cs.color || "") ? cs.color : "");
-  $("msgs").style.fontSize = cs.size ? ({ s: "14px", m: "16px", l: "19px" }[cs.size] || "") : "";
-  $("mood").value = cs.mood || S.mood;
+  const mine = CS[curKey()] || {}, all = CS.all || {}, pick = k => mine[k] !== undefined ? mine[k] : all[k];
+  $("main").style.setProperty("--accent", /^#[0-9a-fA-F]{6}$/.test(pick("color") || "") ? pick("color") : "");
+  $("msgs").style.fontSize = mine.size ? ({ s: "14px", m: "16px", l: "19px" }[mine.size] || "") : "";
+  $("mood").value = mine.mood || S.mood;
+  applyWall(pick("wall"), pick("wallPath"), pick("dim"));
 }
 async function loadChatSettings() {
   const { data } = await sb.from("chat_settings").select("chat_key,settings");
@@ -1686,6 +1720,7 @@ function openChatSettings() {
   $("csDm").style.display = ch ? "none" : "block"; $("csSafe").style.display = ch ? "none" : "block";
   $("csMute").checked = S.muted.includes(key); $("csSound").value = cs.sound || "default"; $("csSize").value = cs.size || "default";
   $("csEnter").value = cs.enter || "default"; $("csMood").value = cs.mood || "default"; $("csTone").value = cs.tone || "default"; paintSwatches(cs.color);
+  paintWalls(cs.wall); $("csDim").value = String(cs.dim ?? (CS.all || {}).dim ?? 0);
   if (grp) {
     $("shName").textContent = gname(grp); $("csSub").textContent = "Group"; av.textContent = "👥"; av.style.background = "var(--their)"; av.style.color = "var(--accent)"; groupAv(av, groups.find(x => x.id === grp));
     $("csDm").style.display = "none"; $("csSafe").style.display = "none";
@@ -2536,6 +2571,60 @@ $("gFlip").onclick = async () => {
     g.local.getVideoTracks().forEach(t => { t.stop(); g.local.removeTrack(t); }); g.local.addTrack(nt2); g.facing = next;
     g.localTile.video.srcObject = g.local; g.localTile.video.style.transform = next === "user" ? "scaleX(-1)" : "none";
   } catch (e) { alert("Couldn’t switch the camera."); }
+};
+
+/* ================= chat themes: wallpapers (your own image too) ================= */
+function paintWalls(sel) {
+  const box = $("csWalls"); box.innerHTML = "";
+  const mk = (id, label, bg, txt) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "ws" + (sel === id ? " on" : ""); b.title = label;
+    if (bg) b.style.background = bg; if (txt) b.textContent = txt; b.onclick = () => pickWall(id); box.appendChild(b);
+  };
+  mk("none", "No wallpaper", "", "⊘");
+  WALLS.forEach(([id, label, bg]) => mk(id, label, bg));
+  mk("custom", "My own image", "", "📷");
+}
+async function pickWall(id) {
+  const key = curKey(), old = (CS[key] || {}).wallPath;
+  if (id === "custom") { $("csWallFile").click(); return; }
+  await csSet({ wall: id, wallPath: null });
+  if (old) sb.storage.from("wallpapers").remove([old]);
+  paintWalls(id);
+}
+$("csWallFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const img = await createImageBitmap(f, { imageOrientation: "from-image" });
+    const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.8));
+    const old = (CS[curKey()] || {}).wallPath, path = me + "/wall-" + Date.now() + ".jpg";
+    const up = await sb.storage.from("wallpapers").upload(path, blob, { contentType: "image/jpeg" }); if (up.error) throw up.error;
+    await csSet({ wall: "custom", wallPath: path });
+    if (old) sb.storage.from("wallpapers").remove([old]);
+    paintWalls("custom");
+  } catch (err) { alert("Couldn’t use that image: " + (err.message || err)); }
+};
+$("csDim").onchange = e => csSet({ dim: Number(e.target.value) });
+async function persistCS(key, obj) {
+  const { error } = Object.keys(obj).length
+    ? await sb.from("chat_settings").upsert({ user_id: me, chat_key: key, settings: obj, updated_at: nowIso() })
+    : await sb.from("chat_settings").delete().eq("chat_key", key);
+  if (error) alert("Couldn’t save the theme: " + error.message);
+  return !error;
+}
+$("csThemeAll").onclick = async () => {
+  const mine = CS[curKey()] || {}, t = {};
+  ["color", "wall", "dim"].forEach(k => { if (mine[k] !== undefined) t[k] = mine[k]; });
+  if (mine.wall === "custom" && mine.wallPath) {
+    const np = me + "/wall-all-" + Date.now() + ".jpg", { error } = await sb.storage.from("wallpapers").copy(mine.wallPath, np);
+    if (error) { alert("Couldn’t copy the wallpaper: " + error.message); return; }
+    t.wallPath = np;
+  }
+  const old = (CS.all || {}).wallPath;
+  if (!(await persistCS("all", t))) return;
+  CS.all = t; if (old && old !== t.wallPath) sb.storage.from("wallpapers").remove([old]);
+  applyChatSettings(); alert("Done. Chats that don’t have their own look will use this one.");
 };
 
 $("send").onclick = send;
